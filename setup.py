@@ -45,6 +45,7 @@ setup(
     description="Implements an iterator interface reminscent of languages such as Elixier of F#.",
     long_description=long_description,
     long_description_content_type='text/markdown',
+    license='MIT',
     url="https://github.com/StefanGreve/iterfun",
     project_urls={
         'Documentation': "https://github.com/StefanGreve/iterfun/blob/master/README.md",    #TODO: Add proper documention
@@ -58,6 +59,7 @@ setup(
         'dev': dev_packages[1:],
         'test': ['pytest']
     },
+    include_package_data=True,
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     classifiers=[
