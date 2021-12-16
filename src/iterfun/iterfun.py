@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-class Iterator:
+class Iter:
     @staticmethod
     def hello():
         return "Hello, World!"
