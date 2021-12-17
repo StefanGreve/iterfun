@@ -18,4 +18,5 @@
     </a>
 </p>
 
-Implements an iterator interface reminscent of languages such as Elixier of F#.
+Implements an iterator interface reminiscent of functional programming languages
+such as Elixier.
