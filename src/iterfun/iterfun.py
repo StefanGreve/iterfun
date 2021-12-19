@@ -8,7 +8,7 @@ import operator
 import random
 import statistics
 from collections import Counter
-from typing import Any, Callable, Dict, Iterable, List, Set, Tuple, Union, overload
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 
 
 class Iter:
@@ -31,7 +31,7 @@ class Iter:
         self.domain = list(iter)
         self.image = iter
 
-    def all(self, fun: Callable=None) -> bool:
+    def all(self, fun: Optional[Callable]=None) -> bool:
         """
         Return `True` if all elements in `self.image` are truthy, or `True` if
         `fun` is not None and its map truthy for all elements in `self.image`.
@@ -50,7 +50,7 @@ class Iter:
         self.image = all(self.image) if fun is None else all(map(fun, self.image))
         return self.image
 
-    def any(self, fun: Callable=None) -> bool:
+    def any(self, fun: Optional[Callable]=None) -> bool:
         """
         Return `True` if any elements in `self.image` are truthy, or `True` if
         `fun` is not None and its map truthy for at least on element in `self.image`.
@@ -97,22 +97,75 @@ class Iter:
         self.image = statistics.mean(self.image)
         return self.image
 
-    def chunk_by(self, by: Union[int, Callable]) -> Iter:
+    def chunk_by(self, fun: Callable) -> Iter:
         """
-        Split `self.image` on every element for which `by` returns a new value
-        if `by` is a predicate, else split `self.image` into sublists of size `by`.
+        Split `self.image` on every element for which `fun` returns a new value.
 
         ```python
         >>> Iter([1, 2, 2, 3, 4, 4, 6, 7, 7, 7]).chunk_by(lambda x: x % 2 == 1)
         [[1], [2, 2], [3], [4, 4, 6], [7, 7, 7]]
-        >>> Iter([1, 2, 2, 3, 4, 4, 6, 7, 7]).chunk_by(3)
-        [[1, 2, 2], [3, 4, 4], [6, 7, 7], [7]]
+        ```
         """
-        if isinstance(by, int):
-            self.image = [list(self.image)[i:i+by] for i in range(0, len(self.image), by)]
-            return self.image
-        else:
-            raise NotImplementedError()
+        self.image = [list(group) for _, group in itertools.groupby(self.image, fun)]
+        return self
+
+    def chunk_every(self, count: int, step: Optional[int]=None, leftover: Optional[List[Any]]=None) -> Iter:
+        """
+        Return list of lists containing `count` elements each. `step` is optional
+        and, if not passed, defaults to `count`, i.e. chunks do not overlap.
+
+        ```python
+        >>> Iter(range(1, 7)).chunk_every(2)
+        [[1, 2], [3, 4], [5, 6]]
+        >>> Iter(range(1, 7)).chunk_every(3, 2, [7])
+        [[1, 2, 3], [3, 4, 5], [5, 6, 7]]
+        >>> Iter(range(1, 4)).chunk_every(3, 3)
+        [[1, 2, 3], [4]]
+        ```
+        """
+        step = step or count
+        self.image = [list(self.image)[i:i+count] for i in range(0, len(self.image), count-(count-step))]
+        if leftover: self.image[-1].extend(leftover[:len(self.image[-1])])
+        return self
+
+    def chunk_while(self, acc: List, chunk_fun: Callable, chunk_after: Callable) -> Iter:
+        raise NotImplementedError()
+
+    @overload
+    @staticmethod
+    def concat(iter: List[Any]) -> Iter: ...
+
+    @overload
+    @staticmethod
+    def concat(*iter: Tuple[int, int]) -> Iter: ...
+
+    @staticmethod
+    def concat(*iter: List[Any] | Tuple[int, int]) -> Iter:
+        """
+        Given a list of lists, concatenates the list into a single list.
+
+        ```python
+        >>> Iter.concat([[1, [2], 3], [4], [5, 6]])
+        [1, [2], 3, 4, 5, 6]
+        >>> Iter.concat((1, 3), (4, 6))
+        [1, 2, 3, 4, 5, 6]
+        ```
+        """
+        return Iter(list(itertools.chain(*(iter[0] if isinstance(iter[0], List) else [range(t[0], t[1]+1) for t in iter]))))
+
+    def count(self, fun: Optional[Callable]=None) -> int:
+        """
+        Return the size of the `self.image` if `fun` is `None`, else return the
+        count of elements in `self.image` for which `fun` returns a truthy value.
+
+        ```python
+        >>> Iter(range(1,4)).count()
+        3
+        >>> Iter(range(1, 6).count(lambda x: x % 2 == 0))
+        2
+        ```
+        """
+        return len(self.image) if fun is None else len(list(filter(fun, self.image)))
 
     def __str__(self) -> str:
         return f"[{', '.join(map(str, self.iter))}]" if isinstance(self.image, Iterable) else self.image

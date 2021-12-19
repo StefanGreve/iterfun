@@ -1,3 +1,4 @@
+from itertools import accumulate
 import unittest
 import pytest
 
@@ -34,12 +35,32 @@ class TestIter(unittest.TestCase):
     def test_avg(self):
         self.assertEqual(5, Iter(range(11)).avg())
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     def test_chunk_by(self):
         expected = [[1], [2, 2], [3], [4, 4, 6], [7, 7]]
-        actual = Iter([1, 2, 2, 3, 4, 4, 6, 7, 7]).chunk_by(lambda x: x % 2 == 1)
+        actual = Iter([1, 2, 2, 3, 4, 4, 6, 7, 7]).chunk_by(lambda x: x % 2 == 1).image
         self.assertEqual(expected, actual)
-        print(f"{actual=}")
+
+    def test_chunk_every(self):
+        self.assertEqual([[1, 2], [3, 4], [5, 6]], Iter(range(1, 7)).chunk_every(2).image)
+        self.assertEqual([[1, 2, 3], [3, 4, 5], [5, 6]], Iter(range(1,7)).chunk_every(3, 2).image)
+        self.assertEqual([[1, 2, 3], [3, 4, 5], [5, 6, 7]], Iter(range(1, 7)).chunk_every(3, 2, [7]).image)
+        self.assertEqual([[1, 2, 3], [4]], Iter(range(1, 5)).chunk_every(3, 3, []).image)
+        self.assertEqual([[1, 2, 3, 4]], Iter(range(1,5)).chunk_every(10).image)
+        self.assertEqual([[1, 2], [4, 5]], Iter(range(1, 6)).chunk_every(2, 3, []).image)
+
+    @pytest.mark.xfail(raises=NotImplementedError, reason="TODO")
+    def test_chunk_while(self):
+        self.assertEqual([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]], Iter(range(1, 11)).chunk_while([], None, None))
+
+    def test_concant(self):
+        self.assertEqual([1, [2], 3, 4, 5, 6],  Iter.concat([[1, [2], 3], [4], [5, 6]]).image)
+        self.assertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9], Iter.concat((1, 3), (4, 6), (7, 9)).image)
+        self.assertEqual([1, 2, 3, 4, 5, 6],  Iter.concat([[1, 2, 3], [4, 5, 6]]).image)
+        self.assertEqual([1, 2, 3, 4, 5, 6], Iter.concat((1, 3), (4, 6)).image)
+
+    def test_count(self):
+        self.assertEqual(3, Iter(range(1, 4)).count())
+        self.assertEqual(2, Iter(range(1, 6)).count(lambda x: x % 2 == 0))
 
     #endregion
 
