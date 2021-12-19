@@ -19,4 +19,4 @@
 </p>
 
 Implements an iterator interface reminiscent of functional programming languages
-such as Elixier.
+such as Elixir.

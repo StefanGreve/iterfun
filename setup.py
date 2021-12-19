@@ -42,7 +42,7 @@ setup(
     author_email="greve.stefan@outlook.jp",
     name=package_name,
     version=version,
-    description="Implements an iterator interface reminiscent of functional programming languages such as Elixier.",
+    description="Implements an iterator interface reminiscent of functional programming languages such as Elixir.",
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='MIT',
