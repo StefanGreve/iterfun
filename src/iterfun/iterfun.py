@@ -19,7 +19,7 @@ class Iter:
     indexed lookup such as `list`, `tuple`, `dict`, or `set`.
 
     ```python
-    >>> Iter(1, 3).map(lambda x: 2*x)
+    >>> Iter([1, 3]).map(lambda x: 2*x)
     [2, 4, 6]
     >>> Iter([1, 2, 3]).sum()
     6
@@ -29,20 +29,23 @@ class Iter:
     """
 
     @overload
-    def __init__(self, iter: Iterable) -> Iter: ...
+    def __init__(self, iter: Iterable, interval: bool=False) -> Iter: ...
 
     @overload
-    def __init__(self, *iter: int) -> Iter: ...
+    def __init__(self, iter: List[int, int], interval: bool=True) -> Iter: ...
 
-    def __init__(self, *iter: Iterable | int) -> Iter:
-        self.domain = iter[0]
-        self.image = Iter.__ctor(iter)
+    @overload
+    def __init__(self, iter: Tuple[int, int], interval: bool=True) -> Iter: ...
+
+    def __init__(self, iter: Iterable | List[int, int] | Tuple[int, int], interval: bool=True) -> Iter:
+        self.domain = iter
+        self.image = Iter.__ctor(iter) if interval and len(iter) == 2 else iter
 
     @staticmethod
-    def __ctor(iter: Iterable | int) -> List:
-        if isinstance(iter, Tuple) and len(iter) == 2:
-            return list(range(iter[0], iter[1]+1)) if iter[1] != 0 else []
-        return iter[0]
+    def __ctor(iter: Iterable | List[int, int] | Tuple[int, int]) -> List:
+        if (isinstance(iter, Tuple) or isinstance(iter, List)):
+            return Iter.range(iter) if iter[1] != 0 else []
+        return iter
 
     def all(self, fun: Optional[Callable]=None) -> bool:
         """
