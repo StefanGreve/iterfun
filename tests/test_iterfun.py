@@ -6,7 +6,7 @@ from src.iterfun import Iter
 class TestIter(unittest.TestCase):
     #region unit tests
 
-    def test_iter(self):
+    def test_iter2(self):
         self.assertEqual([1, 2, 3], Iter([1, 2, 3]).image)
         self.assertEqual([1, 2, 3, 4, 5], Iter(1, 5).image)
         self.assertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], Iter(1, 10).image)
@@ -131,7 +131,7 @@ class TestIter(unittest.TestCase):
         self.assertEqual("no bools!", Iter(1, 3).find_value(lambda x: isinstance(x, bool), default="no bools!"))
 
     def test_flat_map(self):
-        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([(1, 3), (4, 6)]).flat_map(lambda x: list(range(x[0], x[1]+1))).image)
+        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([(1, 3), (4, 6)]).flat_map(lambda x: Iter.range(list(x))).image)
         self.assertEqual([[1], [2], [3]], Iter([1, 2, 3]).flat_map(lambda x: [[x]]).image)
 
     @pytest.mark.xfail(raises=NotImplementedError, reason="TODO")
@@ -139,6 +139,10 @@ class TestIter(unittest.TestCase):
         n = 3
         fun = lambda x, acc: [[x], acc+1] if acc < n else acc
         self.assertEqual([[1, 2, 3], 3], Iter(1, 100).flat_map_reduce(fun, acc=0).image)
+
+    def test_range(self):
+        self.assertEqual([1, 2, 3, 4, 5], Iter.range([1, 5]))
+        self.assertEqual([2, 3, 4], Iter.range((1, 5)))
 
     #endregion
 

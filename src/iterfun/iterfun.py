@@ -259,7 +259,7 @@ class Iter:
 
     def each(self, fun: Callable) -> bool:
         """
-        Invoke the given `fun` for each element in the `self.image`, then return
+        Invoke the given `fun` for each element in `self.image`, then return
         `True`.
         >>> Iter(1, 3).each(print)
         1
@@ -373,6 +373,28 @@ class Iter:
         ```
         """
         raise NotImplementedError()
+
+    @overload
+    @staticmethod
+    def range(lim: List[int, int]) -> List[int]: ...
+
+    @overload
+    @staticmethod
+    def range(lim: Tuple[int, int]) -> List[int]: ...
+
+    @staticmethod
+    def range(lim: List[int, int] | Tuple[int, int]) -> List[int]:
+        """
+        Return a sequence of integers from start to end.
+
+        ```python
+        >>> Iter.range([1, 5])
+        [1, 2, 3, 4, 5]
+        >>> Iter.range((1, 5))
+        [2, 3, 4]
+        ```
+        """
+        return list(range(lim[0], lim[1]+1) if isinstance(lim, List) else range(lim[0]+1, lim[1]))
 
     def __str__(self) -> str:
         return f"[{', '.join(map(str, self.iter))}]" if isinstance(self.image, Iterable) else self.image
