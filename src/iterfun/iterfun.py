@@ -573,7 +573,7 @@ class Iter:
         'n/a'
         ```
         """
-        return max(self.image, key=fun) if len(self.image) else empty_fallback
+        return max(self.image, key=fun) if self.image else empty_fallback
 
     def member(self, element: Any) -> bool:
         """
@@ -609,7 +609,7 @@ class Iter:
         'n/a'
         ```
         """
-        return min(self.image, key=fun) if len(self.image) else empty_fallback
+        return min(self.image, key=fun) if self.image else empty_fallback
 
     def min_max(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Tuple:
         """
