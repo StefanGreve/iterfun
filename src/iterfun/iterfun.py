@@ -7,7 +7,7 @@ import itertools
 import operator
 import random
 import statistics
-from collections import Counter
+from collections import Counter, ChainMap
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 
 
@@ -23,7 +23,7 @@ class Iter:
     [2, 4, 6]
     >>> Iter([1, 2, 3]).sum()
     6
-    >>> Iter({'a': 1, 'b': 2}).map(lambda k,v: {k, 2 * v}
+    >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: 2 * v}
     {'a': 2, 'b': 4}
     ```
     """
@@ -59,7 +59,7 @@ class Iter:
         False
         >>> Iter([]).all()
         True
-        >>> Iter([1,2,3]).all(lambda x: x % 2 == 0)
+        >>> Iter([1, 2, 3]).all(lambda x: x % 2 == 0)
         False
         ```
         """
@@ -76,7 +76,7 @@ class Iter:
         False
         >>> Iter([False, True, False]).any()
         True
-        >>> Iter([2,4,6]).any(lambda x: x % 2 == 1)
+        >>> Iter([2, 4, 6]).any(lambda x: x % 2 == 1)
         False
         ```
         """
@@ -90,11 +90,11 @@ class Iter:
         enumerable is enumerated once and the index is counted from the end.
 
         ```python
-        >>> Iter([2,4,6]).at(0)
+        >>> Iter([2, 4, 6]).at(0)
         2
-        >>> Iter([2,4,6]).at(-1)
+         >>> Iter([2, 4, 6]).at(-1)
         6
-        >>> Iter([2,4,6]).at(4)
+         >>> Iter([2, 4, 6]).at(4)
         IndexError: list index out of range
         ```
         """
@@ -106,7 +106,7 @@ class Iter:
         Return the sample arithmetic mean of `self.image`.
 
         ```python
-        >>> Iter(range(11)).avg()
+        >>> Iter([0, 10]).avg()
         5
         ```
         """
@@ -131,11 +131,11 @@ class Iter:
         and, if not passed, defaults to `count`, i.e. chunks do not overlap.
 
         ```python
-        >>> Iter(range(1, 7)).chunk_every(2)
+        >>> Iter([1, 6]).chunk_every(2)
         [[1, 2], [3, 4], [5, 6]]
-        >>> Iter(range(1, 7)).chunk_every(3, 2, [7])
+        >>> Iter([1, 6]).chunk_every(3, 2, [7])
         [[1, 2, 3], [3, 4, 5], [5, 6, 7]]
-        >>> Iter(range(1, 4)).chunk_every(3, 3)
+        >>> Iter([1, 4]).chunk_every(3, 3)
         [[1, 2, 3], [4]]
         ```
         """
@@ -175,9 +175,9 @@ class Iter:
         count of elements in `self.image` for which `fun` returns a truthy value.
 
         ```python
-        >>> Iter(range(1,4)).count()
+        >>> Iter([1, 3]).count()
         3
-        >>> Iter(range(1, 6)).count(lambda x: x % 2 == 0)
+        >>> Iter([1, 5]).count(lambda x: x % 2 == 0)
         2
         ```
         """
@@ -189,9 +189,9 @@ class Iter:
         stopping at `limit`.
 
         ```python
-        >>> Iter(range(1, 21)).count_until(5)
+        >>> Iter([1, 20]).count_until(5)
         5
-        >>> Iter(range(1, 21)).count_until(50)
+        >>> Iter([1, 20]).count_until(50)
         20
         ```
         """
@@ -200,7 +200,7 @@ class Iter:
 
     def dedup(self) -> Iter:
         """
-        Enumerates `self.image`, returning a list where all consecutive duplicated
+        Enumerate `self.image`, returning a list where all consecutive duplicated
         elements are collapsed to a single element.
 
         ```python
@@ -216,6 +216,11 @@ class Iter:
 
     def drop(self, amount: int) -> Iter:
         """
+        Drop the `amount` of elements from `self.image`. If a negative `amount` is
+        given, the `amount` of last values will be dropped. `self.image` will be
+        enumerated once to retrieve the proper index and the remaining calculation
+        is performed from the end.
+
         ```python
         >>> Iter([1, 2, 3]).drop(2)
         [3]
@@ -232,15 +237,16 @@ class Iter:
     def drop_every(self, nth: int) -> Iter:
         """
         Return a list of every `nth` element in the `self.image` dropped, starting
-        with the first element. The first element is always dropped, unless `nth` is `0`.
-        The second argument specifying every nth element must be a non-negative integer.
+        with the first element. The first element is always dropped, unless `nth`
+        is `0`. The second argument specifying every nth element must be a non-negative
+        integer.
 
         ```python
-        >>> Iter(1, 10).drop_every(2)
+        >>> Iter([1, 10]).drop_every(2)
         [2, 4, 6, 8, 10]
-        >>> Iter(1, 10).drop_every(0)
+        >>> Iter([1, 10]).drop_every(0)
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        >>> Iter(1, 3).drop_every(1)
+        >>> Iter([1, 3]).drop_every(1)
         []
         ```
         """
@@ -264,7 +270,7 @@ class Iter:
         """
         Invoke the given `fun` for each element in `self.image`, then return
         `True`.
-        >>> Iter(1, 3).each(print)
+        >>> Iter([1, 3]).each(print)
         1
         2
         3
@@ -279,9 +285,9 @@ class Iter:
         ```python
         >>> Iter([]).empty()
         True
-        >>> Iter(0, 0).empty()
+        >>> Iter([0, 0]).empty()
         True
-        >>> Iter(1, 10).empty()
+        >>> Iter([1, 10]).empty()
         False
         ```
         """
@@ -296,7 +302,7 @@ class Iter:
         a truthy value.
 
         ```python
-        >>> Iter(1, 3).filter(lambda x: x % 2 == 0)
+        >>> Iter([1, 3]).filter(lambda x: x % 2 == 0)
         [2]
         ```
         """
@@ -309,7 +315,7 @@ class Iter:
         such element is found, return `default`.
 
         ```python
-        >>> Iter(2, 4).find(lambda x: x % 2 == 1)
+        >>> Iter([2, 4]).find(lambda x: x % 2 == 1)
         3
         >>> Iter([2, 4, 6]).find(lambda x: x % 2 == 1)
         None
@@ -344,7 +350,7 @@ class Iter:
         None
         >>> Iter([2, 3, 4]).filter(lambda x: x > 2).find_value(lambda x: x * x)
         9
-        >>> Iter(1, 3).find_value(lambda x: isinstance(x, bool), "no bools!")
+        >>> Iter([1, 3]).find_value(lambda x: isinstance(x, bool), "no bools!")
         'no bools!'
         ```
         """
@@ -356,7 +362,7 @@ class Iter:
         Map the given `fun` over `self.image` and flattens the result.
 
         ```python
-        >>> Iter([(1, 3), (4, 6)]).flat_map(lambda x: list(range(x[0], x[1]+1)))
+        >>> Iter([(1, 3), (4, 6)]).flat_map(lambda x: list(range(x[0], x[1] + 1)))
         [1, 2, 3, 4, 5, 6]
         >>> Iter([1, 2, 3]).flat_map(lambda x: [[x]])
         [[1], [2], [3]]
@@ -444,6 +450,8 @@ class Iter:
 
     def into(self, iter: Iterable) -> Iter:
         """
+        Insert the given `self.image` into `iter`.
+
         ```python
         >>> Iter([1, 2]).into([])
         [1, 2]
@@ -454,6 +462,57 @@ class Iter:
         ```
         """
         self.image = {**self.image, **iter} if isinstance(iter, Dict) else [*self.image, *iter]
+        return self
+
+    def join(self, joiner: Optional[str]=None) -> str:
+        """
+        Join `self.image` into a string using `joiner` as a separator. If `joiner`
+        is not passed at all, it defaults to an empty string. All elements in
+        `self.image` must be convertible to a string, otherwise an error is raised.
+
+        ```python
+        >>> Iter([1,5]).join()
+        '12345'
+        >>> Iter[[1,5]].join(',')
+        '1,2,3,4,5'
+        ```
+        """
+        return f"{joiner or ''}".join(map(str, self.image))
+
+    def map(self, fun: Callable) -> Iter:
+        """
+        Return a list where each element is the result of invoking `fun` on each
+        corresponding element of `self.image`. For dictionaries, the function expects
+        a key-value pair as arguments.
+
+        ```python
+        >>> Iter([1,3]).map(lambda x: 2 * x)
+        [2, 4, 6]
+        >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: -v})
+        {'a': -1, 'b': -2}
+        ```
+        """
+        self.image = dict(ChainMap(*itertools.starmap(fun, self.image.items()))) if isinstance(self.image, Dict) else list(map(fun, self.image))
+        return self
+
+    def map_every(self, nth: int, fun: Callable) -> Iter:
+        """
+        Return a list of results of invoking `fun` on every `nth` element of `self.image`,
+        starting with the first element. The first element is always passed to the given
+        function, unless `nth` is `0`.
+
+        ```python
+        >>> Iter([1, 10]).map_every(2, lambda x: x + 1000)
+        [1001, 2, 1003, 4, 1005, 6, 1007, 8, 1009, 10]
+        >>> Iter([1, 5]).map_every(0, lambda x: x + 1000)
+        [1, 2, 3, 4, 5]
+        >>> Iter([1, 3]).map_every(1, lambda x: x + 1000)
+        [1001, 1002, 1003]
+        ```
+        """
+        if nth != 0:
+            for i in range(0, len(self.image), nth):
+                self.image[i] = fun(self.image[i])
         return self
 
     @overload

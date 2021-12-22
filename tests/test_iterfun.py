@@ -162,6 +162,21 @@ class TestIter(unittest.TestCase):
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1, 'b': 2}).into({}).image)
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1}).into({'b': 2}).image)
 
+    def test_join(self):
+        self.assertEqual('12345', Iter([1,5]).join())
+        self.assertEqual('1,2,3,4,5', Iter([1,5]).join(','))
+
+    def test_map(self):
+        self.assertEqual([2, 4, 6], Iter([1,3]).map(lambda x: 2*x).image)
+        self.assertEqual({'a': -1, 'b': -2}, Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: -v}).image)
+        self.assertEqual({'a': 2, 'b': 4}, Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: 2 * v}).image)
+
+    def test_map_every(self):
+        self.assertEqual([1001, 2, 1003, 4, 1005, 6, 1007, 8, 1009, 10], Iter([1, 10]).map_every(2, lambda x: x+1000).image)
+        self.assertEqual([1001, 2, 3, 1004, 5, 6, 1007, 8, 9, 1010], Iter([1, 10]).map_every(3, lambda x: x + 1000).image)
+        self.assertEqual([1, 2, 3, 4, 5], Iter([1, 5]).map_every(0, lambda x: x + 1000).image)
+        self.assertEqual([1001, 1002, 1003], Iter([1, 3]).map_every(1, lambda x: x + 1000).image)
+
     def test_range(self):
         self.assertEqual([1, 2, 3, 4, 5], Iter.range([1, 5]))
         self.assertEqual([2, 3, 4], Iter.range((1, 5)))
