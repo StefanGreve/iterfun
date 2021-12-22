@@ -153,7 +153,7 @@ class TestIter(unittest.TestCase):
         self.assertEqual({3: ["a", "c"], 5: ["d"], 7: ["b"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, lambda s: s[0]).image)
 
     def test_intersperse(self):
-        self.assertEqual([1, 0, 2, 0, 3, 0], Iter([1, 3]).intersperse(0).image)
+        self.assertEqual([1, 0, 2, 0, 3], Iter([1, 3]).intersperse(0).image)
         self.assertEqual([1], Iter([1]).intersperse(0).image)
         self.assertEqual([], Iter([]).intersperse(0).image)
 
@@ -176,6 +176,58 @@ class TestIter(unittest.TestCase):
         self.assertEqual([1001, 2, 3, 1004, 5, 6, 1007, 8, 9, 1010], Iter([1, 10]).map_every(3, lambda x: x + 1000).image)
         self.assertEqual([1, 2, 3, 4, 5], Iter([1, 5]).map_every(0, lambda x: x + 1000).image)
         self.assertEqual([1001, 1002, 1003], Iter([1, 3]).map_every(1, lambda x: x + 1000).image)
+
+    def test_map_intersperse(self):
+        self.assertEqual([2, None, 4, None, 6], Iter([1, 3]).map_intersperse(None, lambda x: 2 * x).image)
+
+    def test_map_join(self):
+        self.assertEqual('246', Iter([1, 3]).map_join(lambda x: 2 * x))
+        self.assertEqual('2 = 4 = 6', Iter([1, 3]).map_join(lambda x: 2 * x, " = "))
+
+    def test_map_reduce(self):
+        self.assertEqual(([2, 4, 6], 6), Iter([1, 3]).map_reduce(0, lambda x: 2 * x, lambda x, acc: x + acc).image)
+        self.assertEqual(([1, 4, 9], 0), Iter([1, 3]).map_reduce(6, lambda x: x * x, lambda x, acc: x - acc).image)
+
+    def test_max(self):
+        self.assertEqual(3, Iter([1, 3]).max())
+        self.assertEqual('you', Iter("you shall not pass".split()).max())
+        self.assertEqual('shall', Iter("you shall not pass".split()).max(len))
+        self.assertEqual('n/a', Iter([]).max(empty_fallback='n/a'))
+
+    def test_member(self):
+        self.assertTrue(Iter([1, 10]).member(5))
+        self.assertTrue(Iter([1, 10]).member(5.0))
+        self.assertTrue(Iter([1.0, 2.0, 3.0]).member(2))
+        self.assertTrue(Iter([1.0, 2.0, 3.0]).member(2.000))
+        self.assertFalse(Iter(['a', 'b', 'c']).member('d'))
+
+    def test_max(self):
+        self.assertEqual(1, Iter([1, 3]).min())
+        self.assertEqual('not', Iter("you shall not pass".split()).min())
+        self.assertEqual('you', Iter("you shall not pass".split()).min(len))
+        self.assertEqual('n/a', Iter([]).min(empty_fallback='n/a'))
+
+    def test_min_max(self):
+        self.assertEqual((1, 3), Iter([1, 3]).min_max())
+        self.assertEqual((None, None), Iter([]).min_max(empty_fallback=None))
+        self.assertEqual(('a', 'aaa'), Iter(["aaa", "a", "bb", "c", "ccc"]).min_max(len))
+
+    def test_product(self):
+        self.assertEqual(24, Iter([2, 3, 4]).product())
+        self.assertEqual(24.0, Iter([2.0, 3.0, 4.0]).product())
+
+    def test_random(self):
+        numbers = Iter.range([1, 100])
+        self.assertIn(Iter(numbers).random(), numbers)
+
+    def test_reduce(self):
+        self.assertEqual(10,  Iter([1, 4]).reduce(lambda x, acc: x + acc))
+        self.assertEqual(24,  Iter([1, 4]).reduce(lambda x, acc: x * acc, acc=1))
+
+    def test_reduce_while(self):
+        self.assertEqual(10, Iter([1, 100]).reduce_while(lambda x, acc: (True, x + acc) if x < 5 else (False, acc)))
+        self.assertEqual(5050, Iter([1, 100]).reduce_while(lambda x, acc: (True, acc + x) if x > 0 else (False, acc)))
+        self.assertEqual(0, Iter([1, 100]).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550))
 
     def test_range(self):
         self.assertEqual([1, 2, 3, 4, 5], Iter.range([1, 5]))

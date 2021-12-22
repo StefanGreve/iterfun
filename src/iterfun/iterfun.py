@@ -431,21 +431,20 @@ class Iter:
         self.image = {k: value(g) for k, g in itertools.groupby(sorted(self.image, key=key_fun), key_fun)}
         return self
 
-    def intersperse(self, seperator: Any) -> Iter:
+    def intersperse(self, separator: Any) -> Iter:
         """
         Intersperses separator between each element of `self.image`.
 
         ```python
         >>> Iter([1, 3]).intersperse(0)
-        [1, 0, 2, 0, 3, 0]
+        [1, 0, 2, 0, 3]
         >>> Iter([1]).intersperse(0)
         [1]
         >>> Iter([]).intersperse(0)
         []
         ```
         """
-        self.image = list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(seperator), self.image)), 1, None))
-        if len(self.image) > 1: self.image.append(seperator)
+        self.image = list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(separator), self.image)), 1, None))
         return self
 
     def into(self, iter: Iterable) -> Iter:
@@ -514,6 +513,173 @@ class Iter:
             for i in range(0, len(self.image), nth):
                 self.image[i] = fun(self.image[i])
         return self
+
+    def map_intersperse(self, separator: Any, fun: Callable) -> Iter:
+        """
+        Map and intersperses `self.image` in one pass.
+
+        ```python
+        >>> Iter([1, 3]).map_intersperse(None, lambda x: 2 * x)
+        [2, None, 4, None, 6]
+        ```
+        """
+        self.image =  list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(separator), map(fun, self.image))), 1, None))
+        return self
+
+    def map_join(self, fun: Callable, joiner: Optional[str]=None) -> str:
+        """
+        Map and join `self.image` in one pass. If joiner is not passed at all, it
+        defaults to an empty string. All elements returned from invoking `fun` must
+        be convertible to a string, otherwise an error is raised.
+
+        ```python
+        >>> Iter([1, 3]).map_join(lambda x: 2 * x)
+        '246'
+        >>> Iter([1, 3]).map_join(lambda x: 2 * x, " = ")
+        '2 = 4 = 6'
+        ```
+        """
+        return f"{joiner or ''}".join(map(str, map(fun, self.image)))
+
+    def map_reduce(self, acc: Union[int, float, complex], fun: Callable, acc_fun: Optional[Callable]) -> Iter:
+        """
+        Invoke the given function to each element in `self.image` to reduce it to
+        a single element, while keeping an accumulator. Return a tuple where the
+        first element is the mapped enumerable and the second one is the final
+        accumulator.
+
+        ```python
+        >>> Iter([1, 3]).map_reduce(0, lambda x: 2 * x, lambda x, acc: x + acc)
+        ([2, 4, 6], 6)
+        >>> Iter([1, 3]).map_reduce(6, lambda x: x * x, lambda x, acc: x - acc)
+        ([1, 4, 9], 0)
+        ```
+        """
+        self.image = (list(map(fun, self.image)), functools.reduce(acc_fun, self.image, acc))
+        return self
+
+    def max(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Any:
+        """
+        Return the maximal element in `self.image` as calculated by the given `fun`.
+
+        ```python
+        >>> Iter([1, 3]).max()
+        3
+        >>> Iter("you shall not pass".split()).max()
+        'you'
+        >>> Iter("you shall not pass".split()).max(len)
+        'shall'
+        >>> Iter([]).max(empty_fallback='n/a')
+        'n/a'
+        ```
+        """
+        return max(self.image, key=fun) if len(self.image) else empty_fallback
+
+    def member(self, element: Any) -> bool:
+        """
+        Checks if element exists within `self.image`.
+
+        ```python
+        >>> Iter([1, 10]).member(5)
+        True
+        >>> Iter([1, 10]).member(5.0)
+        False
+        >>> Iter([1.0, 2.0, 3.0]).member(2)
+        True
+        >>> Iter([1.0, 2.0, 3.0]).member(2.000)
+        True
+        >>> Iter(['a', 'b', 'c']).member('d')
+        False
+        ```
+        """
+        return element in self.image
+
+    def min(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Any:
+        """
+        Return the minimum element in `self.image` as calculated by the given `fun`.
+
+        ```python
+        >>> Iter([1, 3]).max()
+        1
+        >>> Iter("you shall not pass".split()).max()
+        'you'
+        >>> Iter("you shall not pass".split()).max(len)
+        'not'
+        >>> Iter([]).max(empty_fallback='n/a')
+        'n/a'
+        ```
+        """
+        return min(self.image, key=fun) if len(self.image) else empty_fallback
+
+    def min_max(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Tuple:
+        """
+        Return a tuple with the minimal and the maximal elements in `self.image`.
+
+        ```python
+        >>> Iter([1, 3]).min_max()
+        (1, 3)
+        >>> Iter([]).min_max(empty_fallback=None)
+        (None, None)
+        >>> Iter(["aaa", "a", "bb", "c", "ccc"]).min_max(len)
+        ('a', 'aaa')
+        ```
+        """
+        return (self.min(fun, empty_fallback), self.max(fun, empty_fallback))
+
+    def product(self) -> Iter:
+        """
+        Return the product of all elements.
+
+        ```python
+        >>> Iter([2, 3, 4]).product()
+        24
+        >>> Iter([2.0, 3.0, 4.0]).product()
+        24.0
+        ```
+        """
+        return functools.reduce(operator.mul, self.image, 1)
+
+    def random(self) -> Any:
+        """
+        Return a random element from `self.image`.
+
+        ```python
+        >>> Iter([1, 100]).random()
+        42
+        >>> Iter([1, 100]).random()
+        69
+        ```
+        """
+        return random.choice(self.image)
+
+    def reduce(self, fun: Callable, acc: Optional[Any]=None) -> Any:
+        """
+        Invoke `fun` for each element in `self.image` with the accumulator. The
+        accumulator defaults to `0` if not otherwise specified. Reduce (sometimes
+        also called fold) is a basic building block in functional programming.
+
+        ```python
+        >>> Iter([1, 4]).reduce(lambda x, acc: x + acc)
+        10
+        >>> Iter([1, 4]).reduce(lambda x, acc: x * acc, acc=1)
+        24
+        ```
+        """
+        return functools.reduce(fun, self.image, acc or 0)
+
+    def reduce_while(self, fun: Callable, acc: Optional[Any]=None) -> Any:
+        """
+        Reduce `self.image` until `fun` returns `(False, acc)`.
+
+        ```python
+        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc + x) if x < 5 else (False, acc))
+        10
+        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550)
+        0
+        ```
+        """
+        acc = acc or 0
+        return functools.reduce(lambda acc, x: fun(x, acc)[1], filter(lambda x: fun(x, acc)[0], self.image), acc)
 
     @overload
     @staticmethod
