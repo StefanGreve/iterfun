@@ -47,7 +47,7 @@ class Iter:
             return Iter.range(iter) if iter[1] != 0 else []
         return iter
 
-    def all(self, fun: Optional[Callable]=None) -> bool:
+    def all(self, fun: Optional[Callable[[Any], bool]]=None) -> bool:
         """
         Return `True` if all elements in `self.image` are truthy, or `True` if
         `fun` is not None and its map truthy for all elements in `self.image`.
@@ -66,7 +66,7 @@ class Iter:
         self.image = all(self.image) if fun is None else all(map(fun, self.image))
         return self.image
 
-    def any(self, fun: Optional[Callable]=None) -> bool:
+    def any(self, fun: Optional[Callable[[Any], bool]]=None) -> bool:
         """
         Return `True` if any elements in `self.image` are truthy, or `True` if
         `fun` is not None and its map truthy for at least on element in `self.image`.
@@ -113,7 +113,7 @@ class Iter:
         self.image = statistics.mean(self.image)
         return self.image
 
-    def chunk_by(self, fun: Callable) -> Iter:
+    def chunk_by(self, fun: Callable[[Any], bool]) -> Iter:
         """
         Split `self.image` on every element for which `fun` returns a new value.
 
@@ -169,7 +169,7 @@ class Iter:
         """
         return Iter(list(itertools.chain(*(iter[0] if isinstance(iter[0], List) else [range(t[0], t[1]+1) for t in iter]))))
 
-    def count(self, fun: Optional[Callable]=None) -> int:
+    def count(self, fun: Optional[Callable[[Any], bool]]=None) -> int:
         """
         Return the size of the `self.image` if `fun` is `None`, else return the
         count of elements in `self.image` for which `fun` returns a truthy value.
@@ -183,7 +183,7 @@ class Iter:
         """
         return len(list(self.image)) if fun is None else len(list(filter(fun, self.image)))
 
-    def count_until(self, limit: int, fun: Optional[Callable]=None) -> int:
+    def count_until(self, limit: int, fun: Optional[Callable[[Any], bool]]=None) -> int:
         """
         Count the elements in `self.image` for which `fun` returns a truthy value,
         stopping at `limit`.
@@ -211,7 +211,7 @@ class Iter:
         self.image = [group[0] for group in itertools.groupby(self.image)]
         return self
 
-    def dedup_by(self, fun: Callable):
+    def dedup_by(self, fun: Callable[[Any], bool]):
         raise NotImplementedError()
 
     def drop(self, amount: int) -> Iter:
@@ -253,7 +253,7 @@ class Iter:
         self.image = [] if nth == 1 else [self.image[i] for i in range(int(nth != 0), len(self.image), nth if nth > 1 else 1)]
         return self
 
-    def drop_while(self, fun: Callable) -> Iter:
+    def drop_while(self, fun: Callable[[Any], bool]) -> Iter:
         """
         Drop elements at the beginning of the enumerable while `fun` returns a
         truthy value.
@@ -266,7 +266,7 @@ class Iter:
         self.image = self.image[self.image.index(list(itertools.filterfalse(fun, self.image))[0]):]
         return self
 
-    def each(self, fun: Callable) -> bool:
+    def each(self, fun: Callable[[Any], Any]) -> bool:
         """
         Invoke the given `fun` for each element in `self.image`, then return
         `True`.
@@ -296,7 +296,7 @@ class Iter:
     def fetch(self, index: int) -> bool:
         raise NotImplementedError()
 
-    def filter(self, fun: Callable) -> Iter:
+    def filter(self, fun: Callable[[Any], bool]) -> Iter:
         """
         Filter `self.image`, i.e. return only those elements for which `fun` returns
         a truthy value.
@@ -309,7 +309,7 @@ class Iter:
         self.image = list(filter(fun, self.image))
         return self
 
-    def find(self, fun: Callable, default: Optional[Any]=None) -> Optional[Any]:
+    def find(self, fun: Callable[[Any], bool], default: Optional[Any]=None) -> Optional[Any]:
         """
         Return the first element for which `fun` returns a truthy value. If no
         such element is found, return `default`.
@@ -325,7 +325,7 @@ class Iter:
         """
         return next(filter(fun, self.image), default)
 
-    def find_index(self, fun: Callable, default: Optional[Any]=None) -> Optional[Any]:
+    def find_index(self, fun: Callable[[Any], bool], default: Optional[Any]=None) -> Optional[Any]:
         """
         Similar to `self.find`, but return the index (zero-based) of the element
         instead of the element itself.
@@ -340,7 +340,7 @@ class Iter:
         found = next(filter(fun, self.image), default)
         return self.image.index(found) if found in self.image else default
 
-    def find_value(self, fun: Callable, default: Optional[Any]=None) -> Optional[Any]:
+    def find_value(self, fun: Callable[[Any], bool], default: Optional[Any]=None) -> Optional[Any]:
         """
         Similar to `self.find`, but return the value of the function invocation instead
         of the element itself.
@@ -348,8 +348,8 @@ class Iter:
         ```python
         >>> Iter([2, 4, 6]).find_value(lambda x: x % 2 == 1)
         None
-        >>> Iter([2, 3, 4]).filter(lambda x: x > 2).find_value(lambda x: x * x)
-        9
+        >>> Iter([2, 3, 4]).find_value(lambda x: x % 2 == 1)
+        True
         >>> Iter([1, 3]).find_value(lambda x: isinstance(x, bool), "no bools!")
         'no bools!'
         ```
@@ -357,7 +357,7 @@ class Iter:
         found = next(filter(fun, self.image), default)
         return fun(found) if found is not default else default
 
-    def flat_map(self, fun: Callable) -> Iter:
+    def flat_map(self, fun: Callable[[Any], Any]) -> Iter:
         """
         Map the given `fun` over `self.image` and flattens the result.
 
@@ -396,13 +396,13 @@ class Iter:
         self.image = Counter(self.image)
         return self
 
-    def frequencies_by(self, key_fun: Callable) -> Iter:
+    def frequencies_by(self, key_fun: Callable[[Any], Any]) -> Iter:
         """
         Return a map with keys as unique elements given by `key_fun` and values
         as the count of every element.
 
         ```python
-        >>> Iter(["aa", "aA", "bb", "cc"]).frequencies_by(lambda s: s.lower())
+        >>> Iter(["aa", "aA", "bb", "cc"]).frequencies_by(str.lower)
         {"aa": 2, "bb": 1, "cc": 1}
         >>> Iter(["aaa", "aA", "bbb", "cc", "c"]).frequencies_by(len)
         {3: 2, 2: 2, 1: 1}
@@ -411,7 +411,7 @@ class Iter:
         self.image = Counter(map(key_fun, self.image))
         return self
 
-    def group_by(self, key_fun: Callable, value_fun: Optional[Callable]=None) -> Iter:
+    def group_by(self, key_fun: Callable[[Any], Any], value_fun: Optional[Callable[[Any], Any]]=None) -> Iter:
         """
         Split `self.image` into groups based on `key_fun`.
 
@@ -478,7 +478,13 @@ class Iter:
         """
         return f"{joiner or ''}".join(map(str, self.image))
 
-    def map(self, fun: Callable) -> Iter:
+    @overload
+    def map(self, fun: Callable[[Any], Any]) -> Iter: ...
+
+    @overload
+    def map(self, fun: Callable[[Any, Any], Dict]) -> Iter: ...
+
+    def map(self, fun: Callable[[Any], Any]) -> Iter:
         """
         Return a list where each element is the result of invoking `fun` on each
         corresponding element of `self.image`. For dictionaries, the function expects
@@ -494,7 +500,7 @@ class Iter:
         self.image = dict(ChainMap(*itertools.starmap(fun, self.image.items()))) if isinstance(self.image, Dict) else list(map(fun, self.image))
         return self
 
-    def map_every(self, nth: int, fun: Callable) -> Iter:
+    def map_every(self, nth: int, fun: Callable[[Any], Any]) -> Iter:
         """
         Return a list of results of invoking `fun` on every `nth` element of `self.image`,
         starting with the first element. The first element is always passed to the given
@@ -514,7 +520,7 @@ class Iter:
                 self.image[i] = fun(self.image[i])
         return self
 
-    def map_intersperse(self, separator: Any, fun: Callable) -> Iter:
+    def map_intersperse(self, separator: Any, fun: Callable[[Any], Any]) -> Iter:
         """
         Map and intersperses `self.image` in one pass.
 
@@ -526,7 +532,7 @@ class Iter:
         self.image =  list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(separator), map(fun, self.image))), 1, None))
         return self
 
-    def map_join(self, fun: Callable, joiner: Optional[str]=None) -> str:
+    def map_join(self, fun: Callable[[Any], Any], joiner: Optional[str]=None) -> str:
         """
         Map and join `self.image` in one pass. If joiner is not passed at all, it
         defaults to an empty string. All elements returned from invoking `fun` must
@@ -541,7 +547,7 @@ class Iter:
         """
         return f"{joiner or ''}".join(map(str, map(fun, self.image)))
 
-    def map_reduce(self, acc: Union[int, float, complex], fun: Callable, acc_fun: Optional[Callable]) -> Iter:
+    def map_reduce(self, acc: Union[int, float, complex], fun: Callable[[Any], Any], acc_fun: Optional[Callable[[Any, Any], Any]]) -> Iter:
         """
         Invoke the given function to each element in `self.image` to reduce it to
         a single element, while keeping an accumulator. Return a tuple where the
@@ -558,7 +564,7 @@ class Iter:
         self.image = (list(map(fun, self.image)), functools.reduce(acc_fun, self.image, acc))
         return self
 
-    def max(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Any:
+    def max(self, fun: Optional[Callable[[Any], Any]]=None, empty_fallback: Optional[Any]=None) -> Any:
         """
         Return the maximal element in `self.image` as calculated by the given `fun`.
 
@@ -594,7 +600,7 @@ class Iter:
         """
         return element in self.image
 
-    def min(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Any:
+    def min(self, fun: Optional[Callable[[Any], Any]]=None, empty_fallback: Optional[Any]=None) -> Any:
         """
         Return the minimum element in `self.image` as calculated by the given `fun`.
 
@@ -611,7 +617,7 @@ class Iter:
         """
         return (min(self.image, key=fun) if fun is not None else min(self.image)) if self.image else empty_fallback
 
-    def min_max(self, fun: Optional[Callable]=None, empty_fallback: Optional[Any]=None) -> Tuple:
+    def min_max(self, fun: Optional[Callable[[Any], Any]]=None, empty_fallback: Optional[Any]=None) -> Tuple:
         """
         Return a tuple with the minimal and the maximal elements in `self.image`.
 
@@ -652,7 +658,7 @@ class Iter:
         """
         return random.choice(self.image)
 
-    def reduce(self, fun: Callable, acc: Optional[Any]=None) -> Any:
+    def reduce(self, fun: Callable[[Any, Any], Any], acc: Optional[Any]=None) -> Any:
         """
         Invoke `fun` for each element in `self.image` with the accumulator. The
         accumulator defaults to `0` if not otherwise specified. Reduce (sometimes
@@ -667,7 +673,7 @@ class Iter:
         """
         return functools.reduce(fun, self.image, acc or 0)
 
-    def reduce_while(self, fun: Callable, acc: Optional[Any]=None) -> Any:
+    def reduce_while(self, fun: Callable[[Any, Any], Tuple[bool, Any]], acc: Optional[Any]=None) -> Any:
         """
         Reduce `self.image` until `fun` returns `(False, acc)`.
 

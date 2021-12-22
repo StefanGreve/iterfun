@@ -128,7 +128,7 @@ class TestIter(unittest.TestCase):
     def test_find_value(self):
         self.assertEqual(None, Iter([2, 4, 6]).find_value(lambda x: x % 2 == 1))
         self.assertTrue(Iter([2, 3, 4]).find_value(lambda x: x % 2 == 1))
-        self.assertEqual(9, Iter([2, 3, 4]).filter(lambda x: x > 2).find_value(lambda x: x * x))
+        self.assertTrue(Iter([2, 3, 4]).find_value(lambda x: x % 2 == 1))
         self.assertEqual("no bools!", Iter([1, 3]).find_value(lambda x: isinstance(x, bool), default="no bools!"))
 
     def test_flat_map(self):
@@ -145,7 +145,7 @@ class TestIter(unittest.TestCase):
         self.assertEqual({1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 1}, Iter([1, 2, 2, 3, 4, 5, 5, 6]).frequencies().image)
 
     def test_frequencies_by(self):
-        self.assertEqual({"aa": 2, "bb": 1, "cc": 1}, Iter(["aa", "aA", "bb", "cc"]).frequencies_by(lambda s: s.lower()).image)
+        self.assertEqual({"aa": 2, "bb": 1, "cc": 1}, Iter(["aa", "aA", "bb", "cc"]).frequencies_by(str.lower).image)
         self.assertEqual({3: 2, 2: 2, 1: 1}, Iter(["aaa", "aA", "bbb", "cc", "c"]).frequencies_by(len).image)
 
     def test_group_by(self):
