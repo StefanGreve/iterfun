@@ -377,6 +377,85 @@ class Iter:
         """
         raise NotImplementedError()
 
+    def frequencies(self) -> Iter:
+        """
+        Return a map with keys as unique elements of `self.image` and values as
+        the count of every element.
+
+        ```python
+        >>> Iter([1, 2, 2, 3, 4, 5, 5, 6]).frequencies()
+        {1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 1}
+        ```
+        """
+        self.image = Counter(self.image)
+        return self
+
+    def frequencies_by(self, key_fun: Callable) -> Iter:
+        """
+        Return a map with keys as unique elements given by `key_fun` and values
+        as the count of every element.
+
+        ```python
+        >>> Iter(["aa", "aA", "bb", "cc"]).frequencies_by(lambda s: s.lower())
+        {"aa": 2, "bb": 1, "cc": 1}
+        >>> Iter(["aaa", "aA", "bbb", "cc", "c"]).frequencies_by(len)
+        {3: 2, 2: 2, 1: 1}
+        ```
+        """
+        self.image = Counter(map(key_fun, self.image))
+        return self
+
+    def group_by(self, key_fun: Callable, value_fun: Optional[Callable]=None) -> Iter:
+        """
+        Split `self.image` into groups based on `key_fun`.
+
+        The result is a map where each key is given by `key_fun` and each value
+        is a list of elements given by `value_fun`. The order of elements within
+        each list is preserved from `self.image`. However, like all maps, the
+        resulting map is unordered.
+
+        ```python
+        >>> Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len)
+        {3: ["ant", "cat"], 5: ["dingo"], 7: ["buffalo"]}
+        >>> Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, lambda s: s[0])
+        {3: ["a", "c"], 5: ["d"], 7: ["b"]}
+        ```
+        """
+        value = lambda g: list(g) if value_fun is None else list(map(value_fun, g))
+        self.image = {k: value(g) for k, g in itertools.groupby(sorted(self.image, key=key_fun), key_fun)}
+        return self
+
+    def intersperse(self, seperator: Any) -> Iter:
+        """
+        Intersperses separator between each element of `self.image`.
+
+        ```python
+        >>> Iter([1, 3]).intersperse(0)
+        [1, 0, 2, 0, 3, 0]
+        >>> Iter([1]).intersperse(0)
+        [1]
+        >>> Iter([]).intersperse(0)
+        []
+        ```
+        """
+        self.image = list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(seperator), self.image)), 1, None))
+        if len(self.image) > 1: self.image.append(seperator)
+        return self
+
+    def into(self, iter: Iterable) -> Iter:
+        """
+        ```python
+        >>> Iter([1, 2]).into([])
+        [1, 2]
+        >>> Iter({'a': 1, 'b': 2}).into({})
+        {'a': 1, 'b': 2}
+        >>> Iter({'a': 1}).into({'b': 2})
+        {'a': 1, 'b': 2}
+        ```
+        """
+        self.image = {**self.image, **iter} if isinstance(iter, Dict) else [*self.image, *iter]
+        return self
+
     @overload
     @staticmethod
     def range(lim: List[int, int]) -> List[int]: ...

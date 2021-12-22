@@ -141,6 +141,27 @@ class TestIter(unittest.TestCase):
         fun = lambda x, acc: [[x], acc+1] if acc < n else acc
         self.assertEqual([[1, 2, 3], 3], Iter([1, 100]).flat_map_reduce(fun, acc=0).image)
 
+    def test_frequencies(self):
+        self.assertEqual({1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 1}, Iter([1, 2, 2, 3, 4, 5, 5, 6]).frequencies().image)
+
+    def test_frequencies_by(self):
+        self.assertEqual({"aa": 2, "bb": 1, "cc": 1}, Iter(["aa", "aA", "bb", "cc"]).frequencies_by(lambda s: s.lower()).image)
+        self.assertEqual({3: 2, 2: 2, 1: 1}, Iter(["aaa", "aA", "bbb", "cc", "c"]).frequencies_by(len).image)
+
+    def test_group_by(self):
+        self.assertEqual({3: ["ant", "cat"], 5: ["dingo"], 7: ["buffalo"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len).image)
+        self.assertEqual({3: ["a", "c"], 5: ["d"], 7: ["b"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, lambda s: s[0]).image)
+
+    def test_intersperse(self):
+        self.assertEqual([1, 0, 2, 0, 3, 0], Iter([1, 3]).intersperse(0).image)
+        self.assertEqual([1], Iter([1]).intersperse(0).image)
+        self.assertEqual([], Iter([]).intersperse(0).image)
+
+    def test_into(self):
+        self.assertEqual([1, 2], Iter([1, 2]).into([]).image)
+        self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1, 'b': 2}).into({}).image)
+        self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1}).into({'b': 2}).image)
+
     def test_range(self):
         self.assertEqual([1, 2, 3, 4, 5], Iter.range([1, 5]))
         self.assertEqual([2, 3, 4], Iter.range((1, 5)))
