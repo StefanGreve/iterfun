@@ -253,8 +253,26 @@ class TestIter(unittest.TestCase):
         self.assertEqual([1, 3, 6, 10, 15], Iter([1, 5]).scan(lambda x, y: x + y, acc=0).image)
 
     def test_shuffle(self):
-        ...
+        iter = Iter([1, 10]).shuffle()
+        self.assertTrue(iter.all(lambda x: x in Iter.range([1, 10])))
 
+    def test_slice(self):
+        self.assertEqual([6, 7, 8, 9, 10, 11], Iter([1, 100]).slice([5, 10]).image)
+        self.assertEqual([6, 7, 8, 9, 10], Iter([1, 10]).slice([5, 20]).image)
+        self.assertEqual([26, 27, 28, 29, 30], Iter([1, 30]).slice([-5, -1]).image)
+        self.assertEqual([7, 8, 9], Iter([1, 10]).slice([-4, -2]).image)
+        self.assertEqual([7, 8, 9, 10], Iter([1, 10]).slice([-4, 100]).image)
+        self.assertEqual([6, 7, 8, 9, 10], Iter([1, 10]).slice(5, 100).image)
+        self.assertEqual([], Iter([1, 10]).slice(10, 5).image)
+        self.assertEqual([], Iter([1, 10]).slice(-11, 5).image)
+
+    def test_slide(self):
+        self.assertEqual(['a', 'f', 'b', 'c', 'd', 'e', 'g'], Iter(list("abcdefg")).slide(5, 1).image, msg="Sliding a single element")
+        self.assertEqual(['a', 'd', 'e', 'f', 'b', 'c', 'g'], Iter(list("abcdefg")).slide([3, 5], 1).image, msg="Slide a range of elements backward")
+        self.assertEqual(['a', 'e', 'f', 'b', 'c', 'd', 'g'], Iter(list("abcdefg")).slide([1, 3], 5).image, msg="Slide a range of elements forward")
+        self.assertEqual(['a', 'd', 'e', 'f', 'b', 'c', 'g'], Iter(list("abcdefg")).slide([-4, -2], 1).image, msg="Slide with negative indices (counting from the end)")
+        self.assertEqual(['a', 'b', 'c', 'e', 'f', 'g', 'd'], Iter(list("abcdefg")).slide(3, -1).image, msg="Slide with negative indices (counting from the end)")
+        self.assertEqual(['a', 'b', 'c', 'e', 'f', 'd', 'g'], Iter(list("abcdefg")).slide(3, -2).image, msg="Slide with negative indices (counting from the end)")
 
     #endregion
 

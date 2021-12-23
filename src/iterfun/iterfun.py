@@ -149,14 +149,7 @@ class Iter:
 
     @overload
     @staticmethod
-    def concat(iter: List[Any]) -> Iter: ...
-
-    @overload
-    @staticmethod
-    def concat(*iter: Tuple[int, int]) -> Iter: ...
-
-    @staticmethod
-    def concat(*iter: List[Any] | Tuple[int, int]) -> Iter:
+    def concat(iter: List[Any]) -> Iter:
         """
         Given a list of lists, concatenates the list into a single list.
 
@@ -167,6 +160,14 @@ class Iter:
         [1, 2, 3, 4, 5, 6]
         ```
         """
+        ...
+
+    @overload
+    @staticmethod
+    def concat(*iter: Tuple[int, int]) -> Iter: ...
+
+    @staticmethod
+    def concat(*iter: List[Any] | Tuple[int, int]) -> Iter:
         return Iter(list(itertools.chain(*(iter[0] if isinstance(iter[0], List) else [range(t[0], t[1]+1) for t in iter]))))
 
     def count(self, fun: Optional[Callable[[Any], bool]]=None) -> int:
@@ -479,11 +480,6 @@ class Iter:
         return f"{joiner or ''}".join(map(str, self.image))
 
     @overload
-    def map(self, fun: Callable[[Any], Any]) -> Iter: ...
-
-    @overload
-    def map(self, fun: Callable[[Any, Any], Dict]) -> Iter: ...
-
     def map(self, fun: Callable[[Any], Any]) -> Iter:
         """
         Return a list where each element is the result of invoking `fun` on each
@@ -497,6 +493,12 @@ class Iter:
         {'a': -1, 'b': -2}
         ```
         """
+        ...
+
+    @overload
+    def map(self, fun: Callable[[Any, Any], Dict]) -> Iter: ...
+
+    def map(self, fun: Callable[[Any], Any]) -> Iter:
         self.image = dict(ChainMap(*itertools.starmap(fun, self.image.items()))) if isinstance(self.image, Dict) else list(map(fun, self.image))
         return self
 
@@ -660,14 +662,7 @@ class Iter:
 
     @overload
     @staticmethod
-    def range(lim: List[int, int]) -> List[int]: ...
-
-    @overload
-    @staticmethod
-    def range(lim: Tuple[int, int]) -> List[int]: ...
-
-    @staticmethod
-    def range(lim: List[int, int] | Tuple[int, int]) -> List[int]:
+    def range(bounds: List[int, int]) -> List[int]:
         """
         Return a sequence of integers from start to end.
 
@@ -678,7 +673,15 @@ class Iter:
         [2, 3, 4]
         ```
         """
-        return list(range(lim[0], lim[1]+1) if isinstance(lim, List) else range(lim[0]+1, lim[1]))
+        ...
+
+    @overload
+    @staticmethod
+    def range(bounds: Tuple[int, int]) -> List[int]: ...
+
+    @staticmethod
+    def range(bounds: List[int, int] | Tuple[int, int]) -> List[int]:
+        return list(range(bounds[0], bounds[1]+1) if isinstance(bounds, List) else range(bounds[0]+1, bounds[1]))
 
     def reduce(self, fun: Callable[[Any, Any], Any], acc: int=0) -> Any:
         """
@@ -722,12 +725,7 @@ class Iter:
         return self
 
     @overload
-    def reverse(self) -> Iter: ...
-
-    @overload
-    def reverse(self, tail: Optional[List]=None) -> Iter: ...
-
-    def reverse(self, tail: Optional[List]=None) -> Iter:
+    def reverse(self) -> Iter:
         """
         Return a list of elements in `self.image` in reverse order.
 
@@ -735,7 +733,21 @@ class Iter:
         >>> Iter([1, 5]).reverse()
         [5, 4, 3, 2, 1]
         ```
+
+        Reverse the elements in `self.image`, appends the `tail`, and returns it
+        as a list.
+
+        ```python
+        >>> Iter([1, 3]).reverse([4, 5, 6])
+        [3, 2, 1, 4, 5, 6]
+        ```
         """
+        ...
+
+    @overload
+    def reverse(self, tail: Optional[List]=None) -> Iter: ...
+
+    def reverse(self, tail: Optional[List]=None) -> Iter:
         self.image = list(reversed(self.image))
         if tail: self.image.extend(tail)
         return self
@@ -788,6 +800,92 @@ class Iter:
         ```
         """
         random.shuffle(self.image)
+        return self
+
+    @overload
+    def slice(self, index: List[int]) -> Iter:
+        """
+        Return a subset list of `self.image` by `index`.
+
+        Given an `Iter`, it drops elements before `index[0]` (zero-base),
+        then it takes elements until element `index[1]` (inclusively). Indexes
+        are normalized, meaning that negative indexes will be counted from the end.\
+
+        If `index[1]` is out of bounds, then it is assigned as the index of
+        the last element.
+
+        ```python
+        >>> Iter([1, 100]).slice([5, 10])
+        [6, 7, 8, 9, 10, 11]
+        >>> Iter([1, 10]).slice([5, 20])
+        [6, 7, 8, 9, 10]
+        >>> Iter([1, 30]).slice([-5, -1])
+        [26, 27, 28, 29, 30]
+        ```
+
+        Alternatively, return a subset list of the given enumerable, from `index`
+        (zero-based) with `amount` number of elements if available. Given `self.image`,
+        it drops elements right before element `index`; then, it takes `amount` of
+        elements, returning as many elements as possible if there are not enough elements.
+
+        A negative `index` can be passed, which means `self.image` is enumerated
+        once and the index is counted from the end (for example, `-1` starts slicing
+        from the last element). It returns `[]` if `amount` is `0` or if `index` is
+        out of bounds.
+
+        ```python
+        >>> Iter([1, 10]).slice(5, 100)
+        [6, 7, 8, 9, 10]
+        ```
+        """
+        ...
+
+    @overload
+    def slice(self, index: int, amount: Optional[int]=None) -> Iter: ...
+
+    def slice(self, index: int | List[int], amount: Optional[int]=None) -> Iter:
+        if isinstance(index, List):
+            self.image = self.image[index[0]:] if index[1] == -1 else self.image[index[0]:index[1]+1]
+        else:
+            self.image = self.image[index:amount] if abs(index) <= len(self.image) else []
+        return self
+
+    @overload
+    def slide(self, index: int, insertion_index: int) -> Iter:
+        """
+        Slide a single or multiple elements given by `index` from `self.image` to
+        `insertion_index`. The semantics of the range to be moved match the semantics
+        of `self.slice()`.
+
+        ```python
+        >>> Iter(list("abcdefg")).slide(5, 1)
+        ['a', 'f', 'b', 'c', 'd', 'e', 'g']
+        ```
+        """
+        ...
+
+    @overload
+    def slide(self, index: List[int], insertion_index: int) -> Iter: ...
+
+    def slide(self, index: int | List[int], insertion_index: int) -> Iter:
+        if isinstance(index, List):
+            if (max(index) + len(self.image) if max(index) < 0 else max(index)) > insertion_index:
+                # sliding backwards
+                p1 = self.image[:insertion_index]
+                p3 = self.image[index[0]:index[1]+1]
+                p2 = self.image[insertion_index:index[0]]
+                p4 = self.image[index[1]+1:]
+                self.image = list(itertools.chain(p1, p3, p2, p4))
+            else:
+                # sliding forwards
+                p1 = self.image[:index[0]]
+                p2 = self.image[index[0]:index[1]+1]
+                p3 = self.image[index[1]+1:insertion_index+1]
+                p4 = self.image[insertion_index+1:]
+                self.image = list(itertools.chain(p1, p3, p2, p4))
+        else:
+            element, ii = self.image.pop(index), insertion_index
+            self.image.insert((ii, ii+1)[ii<0], element) if ii!=-1 else self.image.append(element)
         return self
 
     def __str__(self) -> str:
