@@ -1,7 +1,10 @@
+import operator
 import unittest
+
 import pytest
 
 from src.iterfun import Iter
+
 
 class TestIter(unittest.TestCase):
     #region unit tests
@@ -150,7 +153,7 @@ class TestIter(unittest.TestCase):
 
     def test_group_by(self):
         self.assertEqual({3: ["ant", "cat"], 5: ["dingo"], 7: ["buffalo"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len).image)
-        self.assertEqual({3: ["a", "c"], 5: ["d"], 7: ["b"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, lambda s: s[0]).image)
+        self.assertEqual({3: ["a", "c"], 5: ["d"], 7: ["b"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, operator.itemgetter(0)).image)
 
     def test_intersperse(self):
         self.assertEqual([1, 0, 2, 0, 3], Iter([1, 3]).intersperse(0).image)
@@ -163,11 +166,11 @@ class TestIter(unittest.TestCase):
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1}).into({'b': 2}).image)
 
     def test_join(self):
-        self.assertEqual('12345', Iter([1,5]).join())
-        self.assertEqual('1,2,3,4,5', Iter([1,5]).join(','))
+        self.assertEqual('12345', Iter([1, 5]).join())
+        self.assertEqual('1,2,3,4,5', Iter([1, 5]).join(','))
 
     def test_map(self):
-        self.assertEqual([2, 4, 6], Iter([1,3]).map(lambda x: 2*x).image)
+        self.assertEqual([2, 4, 6], Iter([1, 3]).map(lambda x: 2 * x).image)
         self.assertEqual({'a': -1, 'b': -2}, Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: -v}).image)
         self.assertEqual({'a': 2, 'b': 4}, Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: 2 * v}).image)
 
@@ -185,8 +188,8 @@ class TestIter(unittest.TestCase):
         self.assertEqual('2 = 4 = 6', Iter([1, 3]).map_join(lambda x: 2 * x, " = "))
 
     def test_map_reduce(self):
-        self.assertEqual(([2, 4, 6], 6), Iter([1, 3]).map_reduce(0, lambda x: 2 * x, lambda x, acc: x + acc).image)
-        self.assertEqual(([1, 4, 9], 0), Iter([1, 3]).map_reduce(6, lambda x: x * x, lambda x, acc: x - acc).image)
+        self.assertEqual(([2, 4, 6], 6), Iter([1, 3]).map_reduce(0, lambda x: 2 * x, operator.add).image)
+        self.assertEqual(([1, 4, 9], 0), Iter([1, 3]).map_reduce(6, lambda x: x * x, operator.sub).image)
 
     def test_max(self):
         self.assertEqual(3, Iter([1, 3]).max())
@@ -220,8 +223,12 @@ class TestIter(unittest.TestCase):
         numbers = Iter.range([1, 100])
         self.assertIn(Iter(numbers).random(), numbers)
 
+    def test_range(self):
+        self.assertEqual([1, 2, 3, 4, 5], Iter.range([1, 5]))
+        self.assertEqual([2, 3, 4], Iter.range((1, 5)))
+
     def test_reduce(self):
-        self.assertEqual(10,  Iter([1, 4]).reduce(lambda x, acc: x + acc))
+        self.assertEqual(10,  Iter([1, 4]).reduce(operator.add))
         self.assertEqual(24,  Iter([1, 4]).reduce(lambda x, acc: x * acc, acc=1))
 
     def test_reduce_while(self):
@@ -229,9 +236,25 @@ class TestIter(unittest.TestCase):
         self.assertEqual(5050, Iter([1, 100]).reduce_while(lambda x, acc: (True, acc + x) if x > 0 else (False, acc)))
         self.assertEqual(0, Iter([1, 100]).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550))
 
-    def test_range(self):
-        self.assertEqual([1, 2, 3, 4, 5], Iter.range([1, 5]))
-        self.assertEqual([2, 3, 4], Iter.range((1, 5)))
+    def test_reject(self):
+        self.assertEqual([1, 3], Iter([1, 3]).reject(lambda x: x % 2 == 0).image)
+
+    def test_reverse(self):
+        self.assertEqual([5, 4, 3, 2, 1], Iter([1, 5]).reverse().image)
+        self.assertEqual([3, 2, 1, 4, 5, 6], Iter([1, 3]).reverse([4, 5, 6]).image)
+
+    def test_reverse_slice(self):
+        self.assertEqual([1, 2, 6, 5, 4, 3], Iter([1, 6]).reverse_slice(2, 4).image)
+        self.assertEqual([1, 2, 6, 5, 4, 3, 7, 8, 9, 10], Iter([1, 10]).reverse_slice(2, 4).image)
+        self.assertEqual([1, 2, 10, 9, 8, 7, 6, 5, 4, 3], Iter([1, 10]).reverse_slice(2, 30).image)
+
+    def test_scan(self):
+        self.assertEqual([1, 3, 6, 10, 15], Iter([1, 5]).scan(operator.add).image)
+        self.assertEqual([1, 3, 6, 10, 15], Iter([1, 5]).scan(lambda x, y: x + y, acc=0).image)
+
+    def test_shuffle(self):
+        ...
+
 
     #endregion
 

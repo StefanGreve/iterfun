@@ -371,7 +371,7 @@ class Iter:
         self.image = list(itertools.chain(*map(fun, self.image)))
         return self
 
-    def flat_map_reduce(self, fun: Callable[[Any, Any], Any], acc: Any) -> Iter:
+    def flat_map_reduce(self, fun: Callable[[Any, Any], Any], acc: int=1) -> Iter:
         """
         Map and reduce an `self.image`, flattening the given results (only one
         level deep). It expects an accumulator and a function that receives each
@@ -423,7 +423,7 @@ class Iter:
         ```python
         >>> Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len)
         {3: ["ant", "cat"], 5: ["dingo"], 7: ["buffalo"]}
-        >>> Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, lambda s: s[0])
+        >>> Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, operator.itemgetter(0))
         {3: ["a", "c"], 5: ["d"], 7: ["b"]}
         ```
         """
@@ -557,7 +557,7 @@ class Iter:
         ```python
         >>> Iter([1, 3]).map_reduce(0, lambda x: 2 * x, lambda x, acc: x + acc)
         ([2, 4, 6], 6)
-        >>> Iter([1, 3]).map_reduce(6, lambda x: x * x, lambda x, acc: x - acc)
+        >>> Iter([1, 3]).map_reduce(6, lambda x: x * x, operator.sub)
         ([1, 4, 9], 0)
         ```
         """
@@ -658,35 +658,6 @@ class Iter:
         """
         return random.choice(self.image)
 
-    def reduce(self, fun: Callable[[Any, Any], Any], acc: Optional[Any]=None) -> Any:
-        """
-        Invoke `fun` for each element in `self.image` with the accumulator. The
-        accumulator defaults to `0` if not otherwise specified. Reduce (sometimes
-        also called fold) is a basic building block in functional programming.
-
-        ```python
-        >>> Iter([1, 4]).reduce(lambda x, acc: x + acc)
-        10
-        >>> Iter([1, 4]).reduce(lambda x, acc: x * acc, acc=1)
-        24
-        ```
-        """
-        return functools.reduce(fun, self.image, acc or 0)
-
-    def reduce_while(self, fun: Callable[[Any, Any], Tuple[bool, Any]], acc: Optional[Any]=None) -> Any:
-        """
-        Reduce `self.image` until `fun` returns `(False, acc)`.
-
-        ```python
-        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc + x) if x < 5 else (False, acc))
-        10
-        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550)
-        0
-        ```
-        """
-        acc = acc or 0
-        return functools.reduce(lambda acc, x: fun(x, acc)[1], filter(lambda x: fun(x, acc)[0], self.image), acc)
-
     @overload
     @staticmethod
     def range(lim: List[int, int]) -> List[int]: ...
@@ -709,5 +680,118 @@ class Iter:
         """
         return list(range(lim[0], lim[1]+1) if isinstance(lim, List) else range(lim[0]+1, lim[1]))
 
+    def reduce(self, fun: Callable[[Any, Any], Any], acc: int=0) -> Any:
+        """
+        Invoke `fun` for each element in `self.image` with the accumulator. The
+        accumulator defaults to `0` if not otherwise specified. Reduce (sometimes
+        also called fold) is a basic building block in functional programming.
+
+        ```python
+        >>> Iter([1, 4]).reduce(operator.add)
+        10
+        >>> Iter([1, 4]).reduce(lambda x, acc: x * acc, acc=1)
+        24
+        ```
+        """
+        return functools.reduce(fun, self.image, acc)
+
+    def reduce_while(self, fun: Callable[[Any, Any], Tuple[bool, Any]], acc: int=0) -> Any:
+        """
+        Reduce `self.image` until `fun` returns `(False, acc)`.
+
+        ```python
+        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc + x) if x < 5 else (False, acc))
+        10
+        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550)
+        0
+        ```
+        """
+        return functools.reduce(lambda acc, x: fun(x, acc)[1], filter(lambda x: fun(x, acc)[0], self.image), acc)
+
+    def reject(self, fun: Callable[[Any], bool]) -> Iter:
+        """
+        Return a list of elements in `self.image` excluding those for which the
+        function `fun` returns a truthy value.
+
+        ```python
+        >>> Iter([1, 3]).reject(lambda x: x % 2 == 0)
+        [1, 3]
+        ```
+        """
+        self.image = list(itertools.filterfalse(fun, self.image))
+        return self
+
+    @overload
+    def reverse(self) -> Iter: ...
+
+    @overload
+    def reverse(self, tail: Optional[List]=None) -> Iter: ...
+
+    def reverse(self, tail: Optional[List]=None) -> Iter:
+        """
+        Return a list of elements in `self.image` in reverse order.
+
+        ```python
+        >>> Iter([1, 5]).reverse()
+        [5, 4, 3, 2, 1]
+        ```
+        """
+        self.image = list(reversed(self.image))
+        if tail: self.image.extend(tail)
+        return self
+
+    def reverse_slice(self, start_index: int, count: int) -> Iter:
+        """
+        Reverse `self.image` in the range from initial `start_index` through `count`
+        elements. If `count` is greater than the size of the rest of `self.image`,
+        then this function will reverse the rest of `self.image`.
+
+        ```python
+        >>> Iter([1, 6]).reverse_slice(2, 4)
+        [1, 2, 6, 5, 4, 3]
+        >>> Iter([1, 10]).reverse_slice(2, 4)
+        [1, 2, 6, 5, 4, 3, 7, 8, 9, 10]
+        >>> Iter([1, 10]).reverse_slice(2, 30)
+        [1, 2, 10, 9, 8, 7, 6, 5, 4, 3]
+        ```
+        """
+        self.image = [*self.image[:start_index], *reversed(self.image[start_index:count+start_index]), *self.image[count+start_index:]]
+        return self
+
+    def scan(self, fun: Callable[[Any, Any], Any], acc: Optional[int]=None) -> Iter:
+        """
+        Apply the given function to each element in `self.image`, storing the result
+        in a list and passing it as the accumulator for the next computation. Uses
+        the first element in the enumerable as the starting value if `acc` is `None`,
+        else uses the given `acc` as the starting value.
+
+        ```python
+        >>> Iter([1, 5]).scan(operator.add)
+        [1, 3, 6, 10, 15]
+        >>> Iter([1, 5]).scan(lambda x, y: x + y, acc=0)
+        [1, 3, 6, 10, 15]
+        ```
+        """
+        acc = acc if acc is not None else self.image[0]
+        self.image = list(itertools.accumulate(self.image[acc==self.image[0]:], fun, initial=acc))[acc!=self.image[0]:]
+        return self
+
+    def shuffle(self) -> Iter:
+        """
+        Return a list with the elements of `self.image` shuffled.
+
+        ```python
+        >>> Iter([1, 3]).shuffle()
+        [3, 2, 1]
+        >>> Iter([1, 3]).shuffle()
+        >>> [2, 1, 3]
+        ```
+        """
+        random.shuffle(self.image)
+        return self
+
     def __str__(self) -> str:
-        return f"[{', '.join(map(str, self.iter))}]" if isinstance(self.image, Iterable) else self.image
+        return f"[{', '.join(map(str, self.image))}]" if isinstance(self.image, Iterable) else self.image
+
+    def __repr__(self) -> str:
+        raise NotImplementedError()
