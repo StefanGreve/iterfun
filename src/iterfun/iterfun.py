@@ -784,8 +784,8 @@ class Iter:
         [1, 3, 6, 10, 15]
         ```
         """
-        acc = acc if acc is not None else self.image[0]
-        self.image = list(itertools.accumulate(self.image[acc==self.image[0]:], fun, initial=acc))[acc!=self.image[0]:]
+        acc = acc if acc is not None else 0
+        self.image = list(map(lambda x: x + acc, itertools.accumulate(self.image, fun)))
         return self
 
     def shuffle(self) -> Iter:

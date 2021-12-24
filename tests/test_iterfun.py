@@ -251,6 +251,7 @@ class TestIter(unittest.TestCase):
     def test_scan(self):
         self.assertEqual([1, 3, 6, 10, 15], Iter([1, 5]).scan(operator.add).image)
         self.assertEqual([1, 3, 6, 10, 15], Iter([1, 5]).scan(lambda x, y: x + y, acc=0).image)
+        self.assertEqual([2, 4, 7, 11, 16], Iter([1, 5]).scan(operator.add, acc=1).image)
 
     def test_shuffle(self):
         iter = Iter([1, 10]).shuffle()
