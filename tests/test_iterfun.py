@@ -275,6 +275,72 @@ class TestIter(unittest.TestCase):
         self.assertEqual(['a', 'b', 'c', 'e', 'f', 'g', 'd'], Iter(list("abcdefg")).slide(3, -1).image, msg="Slide with negative indices (counting from the end)")
         self.assertEqual(['a', 'b', 'c', 'e', 'f', 'd', 'g'], Iter(list("abcdefg")).slide(3, -2).image, msg="Slide with negative indices (counting from the end)")
 
+    def test_sorted(self):
+        self.assertEqual([1, 2, 3], Iter([3, 1, 2]).sort().image)
+        self.assertEqual([3, 2, 1], Iter([3, 1, 2]).sort(descending=True).image)
+
+    def test_split(self):
+        self.assertEqual([[1, 2], [3]], Iter([1, 3]).split(2).image)
+        self.assertEqual([[1, 2, 3], []], Iter([1, 3]).split(10).image)
+        self.assertEqual([[], [1, 2, 3]], Iter([1, 3]).split(0).image)
+        self.assertEqual([[1, 2], [3]], Iter([1, 3]).split(-1).image)
+        self.assertEqual([[1], [2, 3]], Iter([1, 3]).split(-2).image)
+        self.assertEqual([[], [1, 2, 3]], Iter([1, 3]).split(-5).image)
+
+    def test_split_while(self):
+        self.assertEqual([[1, 2], [3, 4]], Iter([1, 4]).split_while(lambda x: x < 3).image)
+        self.assertEqual([[], [1, 2, 3, 4]], Iter([1, 4]).split_while(lambda x: x < 0).image)
+        self.assertEqual([[1, 2, 3, 4], []], Iter([1, 4]).split_while(lambda x: x > 0).image)
+
+    def test_split_with(self):
+        self.assertEqual([[4, 2, 0], [5, 3, 1]], Iter([0, 5]).reverse().split_with(lambda x: x % 2 == 0).image)
+        self.assertEqual([{'b': -2, 'd': -3}, {'a': 1, 'c':1}], Iter({'a': 1, 'b': -2, 'c': 1, 'd': -3}).split_with(lambda k, v: v < 0).image)
+        self.assertEqual([{}, {'a': 1, 'b': -2, 'c': 1, 'd': -3}], Iter({'a': 1, 'b': -2, 'c': 1, 'd': -3}).split_with(lambda k, v: v > 50).image)
+        self.assertEqual([{}, {}], Iter({}).split_with(lambda k, v: v > 50).image)
+
+    def test_sum(self):
+        self.assertEqual(5050, Iter([1, 100]).sum())
+
+    def test_take(self):
+        self.assertEqual([1, 2], Iter([1, 3]).take(2).image)
+        self.assertEqual([1, 2, 3], Iter([1, 3]).take(10).image)
+        self.assertEqual([], Iter([1, 3]).take(0).image)
+        self.assertEqual([3], Iter([1, 3]).take(-1).image)
+
+    def test_take_every(self):
+        self.assertEqual([1, 3, 5, 7, 9], Iter([1, 10]).take_every(2).image)
+        self.assertEqual([], Iter([1, 10]).take_every(0).image)
+        self.assertEqual([1, 2, 3], Iter([1, 3]).take_every(1).image)
+
+    def test_take_random(self):
+        numbers = set(Iter.range([1, 100]))
+        self.assertTrue(set(Iter([1, 100]).take_random(2).image).issubset(numbers))
+
+    def test_take_while(self):
+        self.assertEqual([1, 2], Iter([1, 3]).take_while(lambda x: x < 3).image)
+
+    def test_uniq(self):
+        self.assertEqual([1, 2, 3], Iter([1, 2, 3, 3, 2, 1]).uniq().image)
+
+    def test_unzip(self):
+        self.assertEqual([['a', 'b', 'c'], [1, 2, 3]], Iter({'a': 1, 'b': 2, 'c': 3}).unzip().image)
+        self.assertEqual([['a', 'b', 'c'], [1, 2, 3]], Iter([('a', 1), ('b', 2), ('c', 3)]).unzip().image)
+        self.assertEqual([['a', 'b', 'c'], [1, 2, 3]], Iter([['a', 1], ['b', 2], ['c', 3]]).unzip().image)
+
+    def test_with_index(self):
+        self.assertEqual([('a', 0), ('b', 1), ('c', 2)], Iter(list("abc")).with_index().image)
+        self.assertEqual([('a', 2), ('b', 3), ('c', 4)], Iter(list("abc")).with_index(2).image)
+        self.assertEqual([(0, 'a'), (1, 'b'), (2, 'c')], Iter(list("abc")).with_index(lambda k, v: (v, k)).image)
+
+    def test_zip(self):
+        self.assertEqual([(1, 'a', "foo"), (2, 'b', "bar"), (3, 'c', "baz")], Iter([1, 3]).zip(list("abc"), ["foo", "bar", "baz"]).image)
+        self.assertEqual([('a', 0), ('b', 1), ('c', 2)], Iter(list("abc")).zip(range(3)).image)
+        self.assertEqual([('a', 0, 'd'), ('b', 1, 'e'), ('c', 2, 'f')], Iter(list("abc")).zip(range(3), list("def")).image)
+
+    @pytest.mark.xfail(raises=NotImplementedError, reason='TODO')
+    def test_zip_reduce(self):
+        self.assertEqual([(1, 2, 3), (1, 2, 3)], Iter([[1, 1], [2, 2], [3, 3]]).zip_reduce([], lambda x, acc: x).image)
+
     #endregion
 
     #region leet code tests
