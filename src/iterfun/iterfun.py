@@ -264,7 +264,7 @@ class Iter:
         [3, 2, 1]
         ```
         """
-        self.image = self.image[self.image.index(list(itertools.filterfalse(fun, self.image))[0]):]
+        self.image = list(itertools.dropwhile(fun, self.image))
         return self
 
     def each(self, fun: Callable[[Any], Any]) -> bool:
