@@ -204,7 +204,6 @@ class Iter:
         """
         return len(list(self.image)[:limit]) if fun is None else len(list(filter(fun, self.image))[:limit])
 
-
     def dedup(self) -> Iter:
         """
         Enumerate `self.image`, returning a list where all consecutive duplicated
@@ -215,7 +214,7 @@ class Iter:
         [1, 2, 3, 2, 1]
         ```
         """
-        self.image = [group[0] for group in itertools.groupby(self.image)]
+        self.image = list(map(operator.itemgetter(0), itertools.groupby(self.image)))
         return self
 
     def dedup_by(self, fun: Callable[[Any], bool]):
