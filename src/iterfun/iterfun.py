@@ -218,7 +218,21 @@ class Iter:
         return self
 
     def dedup_by(self, fun: Callable[[Any], bool]):
-        raise NotImplementedError()
+        """
+        Enumerates `self.image`, returning a list where all consecutive duplicated
+        elements are collapsed to a single element.
+
+        ```python
+        >>> Iter([5, 1, 2, 3, 2, 1]).dedup_by(lambda x: x > 2)
+        [5, 1, 3, 2]
+        >>> Iter([0, 4, 9, 1, 2, 0, 3, 4, 9]).dedup_by(lambda x: x < 2)
+        [0, 4, 1, 2, 0, 3]
+        >>> Iter([3, 6, 7, 7, 2, 0, 1, 4, 1]).dedup_by(lambda x: x == 2)
+        [3, 2, 0]
+        ```
+        """
+        self.image = [self.image[0], *[self.image[i] for i in range(1, len(self.image)) if fun(self.image[i-1]) != fun(self.image[i])]]
+        return self
 
     def drop(self, amount: int) -> Iter:
         """
@@ -1229,7 +1243,7 @@ class Iter:
         return self
 
     def __str__(self) -> str:
-        return Iter.shorten(self.image, width=50)
+        return Iter.shorten(self.image, width=80)
 
     def __repr__(self) -> str:
         return f"Iter(domain={Iter.shorten(self.domain)},image={Iter.shorten(self.image)})"

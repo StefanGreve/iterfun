@@ -87,9 +87,12 @@ class TestIter(unittest.TestCase):
     def test_dedup(self):
         self.assertEqual([1, 2, 3, 2, 1], Iter([1, 2, 3, 3, 2, 1]).dedup().image)
 
-    @pytest.mark.xfail(raises=NotImplementedError, reason="TODO")
     def test_dedup_by(self):
         self.assertEqual([5, 1, 3, 2], Iter([5, 1, 2, 3, 2, 1]).dedup_by(lambda x: x > 2).image)
+        self.assertEqual([0, 3, 2], Iter([0, 1, 2, 3, 2, 1]).dedup_by(lambda x: x > 2).image)
+        self.assertEqual([0, 4, 1, 2, 0, 3], Iter([0, 4, 9, 1, 2, 0, 3, 4, 9]).dedup_by(lambda x: x < 2).image)
+        self.assertEqual([3, 2, 4, 1], Iter([3, 6, 7, 7, 2, 0, 1, 4, 1]).dedup_by(lambda x: x > 2).image)
+        self.assertEqual([3, 2, 0], Iter([3, 6, 7, 7, 2, 0, 1, 4, 1]).dedup_by(lambda x: x == 2).image)
 
     def test_drop(self):
         self.assertEqual([3], Iter([1, 3]).drop(2).image)
@@ -357,7 +360,7 @@ class TestIter(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual("[1, 2, 3, 4, 5]", str(Iter([1, 5])))
-        self.assertEqual("[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, ...]", str(Iter([1, 100])))
+        self.assertEqual("[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, ...]", str(Iter([1, 100])))
 
     def test_repr(self):
         self.assertEqual("Iter(domain=[1, 2, 3, 4, 5],image=[1, 2, 3, 4, 5])", repr(Iter([1, 5])))
