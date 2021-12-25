@@ -9,7 +9,7 @@ import random
 import statistics
 import textwrap
 from collections import ChainMap, Counter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, overload
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, overload
 
 
 class Iter:
@@ -1257,8 +1257,8 @@ class Iter:
         self.image = [fun(*args) for args in zip(*iterable)]
         return self
 
-    def __str__(self) -> str:
-        return Iter.shorten(self.image, width=80)
-
     def __repr__(self) -> str:
         return f"Iter(domain={Iter.shorten(self.domain)},image={Iter.shorten(self.image)})"
+
+    def __str__(self) -> str:
+        return Iter.shorten(self.image, width=80)
