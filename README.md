@@ -18,4 +18,6 @@
     </a>
 </p>
 
-Implements an iterator interface reminscent of languages such as Elixier of F#.
+Implements an eager iterator class reminiscent of Elixir's `Enum` structure. See
+also the changelog for more details. Note that the interface is not stable; signatures
+may change at any time until further notice.

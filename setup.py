@@ -42,13 +42,13 @@ setup(
     author_email="greve.stefan@outlook.jp",
     name=package_name,
     version=version,
-    description="Implements an iterator interface reminscent of languages such as Elixier of F#.",
+    description="Implements an eager iterator class reminiscent of Elixir's Enum structure.",
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='MIT',
     url="https://github.com/StefanGreve/iterfun",
     project_urls={
-        'Documentation': "https://github.com/StefanGreve/iterfun/blob/master/README.md",    #TODO: Add proper documention
+        'Documentation': "https://github.com/StefanGreve/iterfun/blob/master/README.md",
         'Source Code': "https://github.com/StefanGreve/iterfun",
         'Bug Reports': "https://github.com/StefanGreve/iterfun/issues",
         'Changelog': "https://github.com/StefanGreve/iterfun/blob/master/CHANGELOG.md"
@@ -63,7 +63,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',
         'Natural Language :: English',
@@ -71,6 +71,8 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: Implementation :: CPython',
         'Operating System :: OS Independent',
         'Topic :: Utilities',
     ],
