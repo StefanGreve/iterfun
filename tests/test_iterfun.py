@@ -116,12 +116,11 @@ class TestIter(unittest.TestCase):
         self.assertTrue(Iter([0, 0]).empty())
         self.assertFalse(Iter([1, 10]).empty())
 
-    @pytest.mark.xfail(raises=NotImplementedError, reason="TODO")
     def test_fetch(self):
-        self.assertTrue(Iter([2, 4, 6]).fetch(0).image)
-        self.assertTrue(Iter([2, 4, 6]).fetch(-3).image)
-        self.assertTrue(Iter([2, 4, 6]).fetch(2).image)
-        self.assertFalse(Iter([2, 4, 6]).fetch(4).image)
+        self.assertEqual({'ok': 2}, Iter([2, 4, 6]).fetch(0))
+        self.assertEqual({'ok': 2}, Iter([2, 4, 6]).fetch(-3))
+        self.assertEqual({'ok': 6}, Iter([2, 4, 6]).fetch(2))
+        self.assertEqual({'error': None}, Iter([2, 4, 6]).fetch(4))
 
     def test_filter(self):
         self.assertEqual([2], Iter([1, 3]).filter(lambda x: x % 2 == 0).image)

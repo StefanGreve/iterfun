@@ -99,7 +99,7 @@ class Iter:
         IndexError: list index out of range
         ```
         """
-        self.image = list(self.image)[index]
+        self.image = self.image[index]
         return self.image
 
     def avg(self) -> Union[int, float]:
@@ -313,8 +313,23 @@ class Iter:
         """
         return not bool(len(self.image))
 
-    def fetch(self, index: int) -> bool:
-        raise NotImplementedError()
+    def fetch(self, index: int) -> Dict[str, Any]:
+        """
+        Find the element at the given index (zero-based). Return `{'ok': element}`
+        if found, otherwise `{'error': None}`.
+
+        ```python
+        >>> Iter([2, 4, 6]).fetch(0)
+        {'ok': 2}
+        >>> Iter([2, 4, 6]).fetch(-3)
+        {'ok': 2}
+        >>> Iter([2, 4, 6]).fetch(2)
+        {'ok': 6}
+        >>> Iter([2, 4, 6]).fetch(4)
+        {'error': None}
+        ```
+        """
+        return {'ok': self.image[index]} if index < len(self.image) else {'error': None}
 
     def filter(self, fun: Callable[[Any], bool]) -> Iter:
         """
