@@ -7,7 +7,8 @@ import itertools
 import operator
 import random
 import statistics
-from collections import Counter, ChainMap
+import textwrap
+from collections import ChainMap, Counter
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 
 
@@ -788,6 +789,20 @@ class Iter:
         self.image = list(map(lambda x: x + acc, itertools.accumulate(self.image, fun)))
         return self
 
+    @staticmethod
+    def shorten(sequence: List, width: int=20) -> str:
+        """
+        Shorten an iterable sequence into an short, human-readable string.
+
+        ```python
+        >>> Iter.shorten(range(1, 6))
+        '[1, 2, 3, 4, 5]'
+        >>> Iter.shorten(range(1, 101), width=50)
+        '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,...]'
+        ```
+        """
+        return textwrap.shorten(str(list(sequence)), width=width, placeholder=' ...]')
+
     def shuffle(self) -> Iter:
         """
         Return a list with the elements of `self.image` shuffled.
@@ -1164,29 +1179,31 @@ class Iter:
         the accumulator.
 
         ```python
-        >>> # TODO
+        >>> Iter([[1, 1], [2, 2], [3, 3]]).zip_reduce([], lambda x, acc: tuple(x) + (acc,))
+        [(1, 2, 3), (1, 2, 3)]
         ```
 
         Reduce over two iterables halting as soon as either iterable is empty.
 
         ```python
-        >>> # TODO
+        >>> Iter([]).zip_reduce([5, 6], lambda x, acc: tuple(x) + (acc,), [1, 2], {'a': 3, 'b': 4})
+        [(1, {'a': 3}, 5), (2, {'b': 4}, 6)]
         ```
         """
         ...
 
     @overload
-    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: List=None, right: List=None) -> Iter: ...
+    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable=None, right: Iterable=None) -> Iter: ...
 
-    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: List=None, right: List=None) -> Iter:
+    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable=None, right: Iterable=None) -> Iter:
         if left is not None and right is not None:
             raise NotImplementedError()
         else:
-            raise NotImplementedError()
+            self.image = list(functools.reduce(reducer, zip(*self.image), acc))
         return self
 
     def __str__(self) -> str:
-        return str(self.image)
+        return Iter.shorten(self.image, width=50)
 
     def __repr__(self) -> str:
-        raise NotImplementedError()
+        return f"Iter(domain={Iter.shorten(self.domain)},image={Iter.shorten(self.image)})"

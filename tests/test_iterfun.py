@@ -253,6 +253,10 @@ class TestIter(unittest.TestCase):
         self.assertEqual([1, 3, 6, 10, 15], Iter([1, 5]).scan(lambda x, y: x + y, acc=0).image)
         self.assertEqual([2, 4, 7, 11, 16], Iter([1, 5]).scan(operator.add, acc=1).image)
 
+    def test_shorten(self):
+        self.assertEqual("[1, 2, 3, 4, 5]", Iter.shorten(range(1, 6)))
+        self.assertEqual("[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, ...]", Iter.shorten(range(1, 101), width=50))
+
     def test_shuffle(self):
         iter = Iter([1, 10]).shuffle()
         self.assertTrue(iter.all(lambda x: x in Iter.range([1, 10])))
@@ -337,9 +341,18 @@ class TestIter(unittest.TestCase):
         self.assertEqual([('a', 0), ('b', 1), ('c', 2)], Iter(list("abc")).zip(range(3)).image)
         self.assertEqual([('a', 0, 'd'), ('b', 1, 'e'), ('c', 2, 'f')], Iter(list("abc")).zip(range(3), list("def")).image)
 
-    @pytest.mark.xfail(raises=NotImplementedError, reason='TODO')
+    @pytest.mark.xfail(raises=NotImplementedError,reason='TODO')
     def test_zip_reduce(self):
-        self.assertEqual([(1, 2, 3), (1, 2, 3)], Iter([[1, 1], [2, 2], [3, 3]]).zip_reduce([], lambda x, acc: x).image)
+        self.assertEqual([(1, 2, 3), (1, 2, 3)], Iter([[1, 1], [2, 2], [3, 3]]).zip_reduce([], lambda x, acc: tuple(x) + (acc,)).image)
+        self.assertEqual([(1, {'a': 3}, 5), (2, {'b': 4}, 6)],  Iter([]).zip_reduce([5, 6], lambda x, acc: tuple(x) + (acc,), [1, 2], {'a': 3, 'b': 4}).image)
+
+    def test_str(self):
+        self.assertEqual("[1, 2, 3, 4, 5]", str(Iter([1, 5])))
+        self.assertEqual("[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, ...]", str(Iter([1, 100])))
+
+    def test_repr(self):
+        self.assertEqual("Iter(domain=[1, 5],image=[1, 2, 3, 4, 5])", repr(Iter([1, 5])))
+        self.assertEqual("Iter(domain=[1, 50],image=[1, 2, 3, 4, 5, ...])", repr(Iter([1, 50])))
 
     #endregion
 
