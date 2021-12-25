@@ -7,13 +7,16 @@ from src.iterfun import Iter
 
 
 class TestIter(unittest.TestCase):
-    #region unit tests
+    def test_iter_domain(self):
+        iter = Iter([1, 4])
+        self.assertEqual(iter.domain, iter.image)
+        self.assertNotEqual(iter.domain, iter.filter(lambda x: x % 2 == 0).image)
 
-    def test_iter(self):
+    def test_iter_image(self):
         self.assertEqual([1, 2, 3], Iter([1, 2, 3]).image)
         self.assertEqual([1, 2, 3, 4, 5], Iter([1, 5]).image)
         self.assertEqual([1, 5], Iter([1, 5], interval=False).image)
-        self.assertEqual([2, 3, 4, 5, 6, 7, 8, 9], Iter((1, 10)).image)
+        self.assertEqual([2, 3, 4, 5, 6, 7, 8, 9], Iter((1, 10)).domain)
 
     def test_all(self):
         self.assertTrue(Iter([1, 2, 3]).all())
@@ -346,16 +349,15 @@ class TestIter(unittest.TestCase):
         self.assertEqual([(1, 2, 3), (1, 2, 3)], Iter([[1, 1], [2, 2], [3, 3]]).zip_reduce([], lambda x, acc: tuple(x) + (acc,)).image)
         self.assertEqual([(1, {'a': 3}, 5), (2, {'b': 4}, 6)],  Iter([]).zip_reduce([5, 6], lambda x, acc: tuple(x) + (acc,), [1, 2], {'a': 3, 'b': 4}).image)
 
+    def test_zip_with(self):
+        self.assertEqual([5, 7, 9], Iter([]).zip_with(operator.add, [1, 2, 3], [4, 5, 6]).image)
+        self.assertEqual([5, 11], Iter([]).zip_with(lambda x, y, z: x + y + z, [1, 3], [3, 5], [1, 3]).image)
+        self.assertEqual([5, 7], Iter([]).zip_with(operator.add, [1, 2], [4, 5, 6, 7]).image)
+
     def test_str(self):
         self.assertEqual("[1, 2, 3, 4, 5]", str(Iter([1, 5])))
         self.assertEqual("[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, ...]", str(Iter([1, 100])))
 
     def test_repr(self):
-        self.assertEqual("Iter(domain=[1, 5],image=[1, 2, 3, 4, 5])", repr(Iter([1, 5])))
-        self.assertEqual("Iter(domain=[1, 50],image=[1, 2, 3, 4, 5, ...])", repr(Iter([1, 50])))
-
-    #endregion
-
-    #region leet code tests
-
-    #endregion
+        self.assertEqual("Iter(domain=[1, 2, 3, 4, 5],image=[1, 2, 3, 4, 5])", repr(Iter([1, 5])))
+        self.assertEqual("Iter(domain=[1, 2, 3, 4, 5, ...],image=[1, 2, 3, 4, 5, ...])", repr(Iter([1, 50])))

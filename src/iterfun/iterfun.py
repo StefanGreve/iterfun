@@ -39,8 +39,8 @@ class Iter:
     def __init__(self, iter: Tuple[int, int], interval: bool=True) -> Iter: ...
 
     def __init__(self, iter: Iterable | List[int, int] | Tuple[int, int], interval: bool=True) -> Iter:
-        self.domain = iter
         self.image = Iter.__ctor(iter) if interval and len(iter) == 2 else iter
+        self.domain = self.image
 
     @staticmethod
     def __ctor(iter: Iterable | List[int, int] | Tuple[int, int]) -> List:
@@ -1200,6 +1200,28 @@ class Iter:
             raise NotImplementedError()
         else:
             self.image = list(functools.reduce(reducer, zip(*self.image), acc))
+        return self
+
+    def zip_with(self, fun: Callable[..., Any], *iterable: Iterable) -> Iter:
+        """
+        Zip corresponding elements from a finite collection of iterables into a list,
+        transforming them with the `fun` function as it goes. The first element from
+        each of the lists in iterables will be put into a list which is then passed
+        to the 1-arity `fun` function. Then, the second elements from each of the
+        iterables are put into a list and passed to `fun`, and so on until any one
+        of the lists in `iterables` runs out of elements. Returns a list with all
+        the results of calling `fun`.
+
+        ```python
+        >>> Iter([]).zip_with(operator.add, [1, 2, 3], [4, 5, 6])
+        [5, 7, 9]
+        >>> Iter([1, 1]).zip_with(operator.add, [1, 2], [3, 4, 6, 7]).image
+        [5, 7]
+        >>> Iter([]).zip_with(lambda x, y, z: x + y + z, [1, 3], [3, 5], [1, 3])
+        [5, 11]
+        ```
+        """
+        self.image = [fun(*args) for args in zip(*iterable)]
         return self
 
     def __str__(self) -> str:
