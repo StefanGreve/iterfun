@@ -44,7 +44,7 @@ class Iter:
 
     @staticmethod
     def __ctor(iter: Iterable | List[int, int] | Tuple[int, int]) -> List:
-        if (isinstance(iter, Tuple) or isinstance(iter, List)):
+        if (isinstance(iter, Tuple) or isinstance(iter, List)) and (isinstance(iter[0], int) and isinstance(iter[1], int)):
             return Iter.range(iter) if iter[1] != 0 else []
         return iter
 
@@ -148,28 +148,33 @@ class Iter:
     def chunk_while(self, acc: List, chunk_fun: Callable, chunk_after: Callable) -> Iter:
         raise NotImplementedError()
 
-    @overload
-    @staticmethod
-    def concat(iter: List[Any]) -> Iter:
+    def concat(self) -> Iter:
         """
         Given a list of lists, concatenates the list into a single list.
 
         ```python
-        >>> Iter.concat([[1, [2], 3], [4], [5, 6]])
+        >>> Iter([[1, 2, 3], [4, 5, 6]]).concat()
+        [1, 2, 4, 5, 6]
+        >>> Iter([[1, [2], 3], [4], [5, 6]]).concat()
         [1, [2], 3, 4, 5, 6]
-        >>> Iter.concat((1, 3), (4, 6))
-        [1, 2, 3, 4, 5, 6]
+        ```
+
+        mode with ranges:
+
+        ```python
+        >>> Iter([[1, 4], [5, 6], [7, 9]]).concat()
+        [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        >>> Iter([(0, 4), (5, 6), (7, 9)]).concat()
+        [1, 2, 3, 8]
+        >>> Iter([(0, 4), (3, 7), (6, 10)]).concat()
+        [1, 2, 3, 4, 5, 6, 7, 8, 9]
         ```
         """
-        ...
-
-    @overload
-    @staticmethod
-    def concat(*iter: Tuple[int, int]) -> Iter: ...
-
-    @staticmethod
-    def concat(*iter: List[Any] | Tuple[int, int]) -> Iter:
-        return Iter(list(itertools.chain(*(iter[0] if isinstance(iter[0], List) else [range(t[0], t[1]+1) for t in iter]))))
+        if all(map(lambda x: len(x) == 2, self.image)):
+            self.image = list(itertools.chain(*map(Iter.range, self.image)))
+        else:
+            self.image = list(itertools.chain(*self.image))
+        return self
 
     def count(self, fun: Optional[Callable[[Any], bool]]=None) -> int:
         """

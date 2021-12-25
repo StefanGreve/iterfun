@@ -63,11 +63,12 @@ class TestIter(unittest.TestCase):
     def test_chunk_while(self):
         self.assertEqual([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]], Iter([1, 10]).chunk_while([], None, None))
 
-    def test_concant(self):
-        self.assertEqual([1, [2], 3, 4, 5, 6],  Iter.concat([[1, [2], 3], [4], [5, 6]]).image)
-        self.assertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9], Iter.concat((1, 3), (4, 6), (7, 9)).image)
-        self.assertEqual([1, 2, 3, 4, 5, 6],  Iter.concat([[1, 2, 3], [4, 5, 6]]).image)
-        self.assertEqual([1, 2, 3, 4, 5, 6], Iter.concat((1, 3), (4, 6)).image)
+    def test_concat(self):
+        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([[1, 2, 3], [4, 5, 6]]).concat().image)
+        self.assertEqual([1, [2], 3, 4, 5, 6], Iter([[1, [2], 3], [4], [5, 6]]).concat().image)
+        self.assertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9], Iter([[1, 4], [5, 6], [7, 9]]).concat().image)
+        self.assertEqual([1, 2, 3, 8], Iter([(0, 4), (5, 6), (7, 9)]).concat().image)
+        self.assertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9], Iter([(0, 4), (3, 7), (6, 10)]).concat().image)
 
     def test_count(self):
         self.assertEqual(3, Iter([1, 3]).count())
