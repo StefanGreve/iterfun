@@ -42,7 +42,7 @@ setup(
     author_email="greve.stefan@outlook.jp",
     name=package_name,
     version=version,
-    description="Implements an iterator interface reminiscent of functional programming languages such as Elixir.",
+    description="Implements an eager iterator class reminiscent of Elixir's Enum structure.",
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='MIT',
