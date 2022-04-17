@@ -108,19 +108,10 @@ class TestIter(unittest.TestCase):
     def test_drop_while(self):
         self.assertEqual([3, 2, 1], Iter([1, 2, 3, 2, 1]).drop_while(lambda x: x < 3).image)
 
-    def test_each(self):
-        self.assertTrue(Iter(["some", "example"], interval=False).each(print))
-
     def test_empty(self):
         self.assertTrue(Iter([]).empty())
         self.assertTrue(Iter([0, 0]).empty())
         self.assertFalse(Iter([1, 10]).empty())
-
-    def test_fetch(self):
-        self.assertEqual({'ok': 2}, Iter([2, 4, 6]).fetch(0))
-        self.assertEqual({'ok': 2}, Iter([2, 4, 6]).fetch(-3))
-        self.assertEqual({'ok': 6}, Iter([2, 4, 6]).fetch(2))
-        self.assertEqual({'error': None}, Iter([2, 4, 6]).fetch(4))
 
     def test_filter(self):
         self.assertEqual([2], Iter([1, 3]).filter(lambda x: x % 2 == 0).image)
@@ -146,9 +137,7 @@ class TestIter(unittest.TestCase):
 
     @pytest.mark.xfail(raises=NotImplementedError, reason="TODO")
     def test_flat_map_reduce(self):
-        n = 3
-        fun = lambda x, acc: [[x], acc+1] if acc < n else acc
-        self.assertEqual([[1, 2, 3], 3], Iter([1, 100]).flat_map_reduce(fun, acc=0).image)
+        pass
 
     def test_frequencies(self):
         self.assertEqual({1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 1}, Iter([1, 2, 2, 3, 4, 5, 5, 6]).frequencies().image)
