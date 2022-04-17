@@ -14,19 +14,26 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, 
 
 class Iter:
     """
-    Define a set of algorithms to work with iterable collections. In Python,
-    an iterable is any data type that implements the `__iter__` method which
-    returns an iterator, or alternatively, a `__getitem__` method suitable for
-    indexed lookup such as `list`, `tuple`, `dict`, or `set`.
+    ## Iter
 
+    This class implements an eager set of common algorithms for list and dictionary
+    transformations. `self.image` is a public field that we use to temporarily store
+    and pass data between method invocations. In addition to that, `self.domain` registers
+    the original collection that was available during the initial object instantiation
+    and should be regarded as a public constant property.
+
+    In Python, an `Iterable` is any data type that implements the `__iter__` method
+    (which returns an iterator as the name suggests) or a `__getitem__` method
+    suitable for indexed lookup such as `list`, `tuple`, `dict`, or `set`.
+
+    ## Examples
     ```python
-    >>> Iter([1, 3]).map(lambda x: 2*x)
+    >>> Iter([1, 3]).map(lambda x: 2*x).to_list()
     [2, 4, 6]
     >>> Iter([1, 2, 3]).sum()
     6
-    >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: 2 * v}
-    {'a': 2, 'b': 4}
-    ```
+    >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: 2 * v}).to_dict()
+    {'b': 4, 'a': 2}
     """
 
     @overload
@@ -39,14 +46,8 @@ class Iter:
     def __init__(self, iter: Tuple[int, int], interval: bool=True) -> Iter: ...
 
     def __init__(self, iter: Iterable | List[int, int] | Tuple[int, int], interval: bool=True) -> Iter:
-        self.image = Iter.__ctor(iter) if interval and len(iter) == 2 else iter
+        self.image = Iter.range(iter) if interval and len(iter) == 2 and all(map(lambda x: isinstance(x, int), iter)) else iter
         self.domain = self.image
-
-    @staticmethod
-    def __ctor(iter: Iterable | List[int, int] | Tuple[int, int]) -> List:
-        if (isinstance(iter, Tuple) or isinstance(iter, List)) and (isinstance(iter[0], int) and isinstance(iter[1], int)):
-            return Iter.range(iter) if iter[1] != 0 else []
-        return iter
 
     def all(self, fun: Optional[Callable[[Any], bool]]=None) -> bool:
         """
@@ -64,8 +65,7 @@ class Iter:
         False
         ```
         """
-        self.image = all(self.image) if fun is None else all(map(fun, self.image))
-        return self.image
+        return all(self.image) if fun is None else all(map(fun, self.image))
 
     def any(self, fun: Optional[Callable[[Any], bool]]=None) -> bool:
         """
@@ -81,8 +81,7 @@ class Iter:
         False
         ```
         """
-        self.image = any(self.image) if fun is None else any(map(fun, self.image))
-        return self.image
+        return any(self.image) if fun is None else any(map(fun, self.image))
 
     def at(self, index: int) -> Any:
         """
@@ -99,8 +98,7 @@ class Iter:
         IndexError: list index out of range
         ```
         """
-        self.image = self.image[index]
-        return self.image
+        return self.image[index]
 
     def avg(self) -> Union[int, float]:
         """
@@ -111,8 +109,7 @@ class Iter:
         5
         ```
         """
-        self.image = statistics.mean(self.image)
-        return self.image
+        return statistics.mean(self.image)
 
     def chunk_by(self, fun: Callable[[Any], bool]) -> Iter:
         """
@@ -141,11 +138,13 @@ class Iter:
         ```
         """
         step = step or count
-        self.image = [list(self.image)[i:i+count] for i in range(0, len(self.image), count-(count-step))]
+        self.image = [list(self.image)[i:i+count] for i in range(0, len(self.image), step)]
         if leftover: self.image[-1].extend(leftover[:len(self.image[-1])])
         return self
 
     def chunk_while(self, acc: List, chunk_fun: Callable, chunk_after: Callable) -> Iter:
+        # reference implementation:
+        # https://hexdocs.pm/elixir/1.12/Enum.html#chunk_while/4
         raise NotImplementedError()
 
     def concat(self) -> Iter:
@@ -159,7 +158,7 @@ class Iter:
         [1, [2], 3, 4, 5, 6]
         ```
 
-        mode with ranges:
+        Concat range-triggering lists or tuples:
 
         ```python
         >>> Iter([[1, 4], [5, 6], [7, 9]]).concat()
@@ -170,10 +169,7 @@ class Iter:
         [1, 2, 3, 4, 5, 6, 7, 8, 9]
         ```
         """
-        if all(map(lambda x: len(x) == 2, self.image)):
-            self.image = list(itertools.chain(*map(Iter.range, self.image)))
-        else:
-            self.image = list(itertools.chain(*self.image))
+        self.image = list(itertools.chain(*map(Iter.range, self.image)) if all(map(lambda x: len(x) == 2, self.image)) else itertools.chain(*self.image))
         return self
 
     def count(self, fun: Optional[Callable[[Any], bool]]=None) -> int:
@@ -286,18 +282,6 @@ class Iter:
         self.image = list(itertools.dropwhile(fun, self.image))
         return self
 
-    def each(self, fun: Callable[[Any], Any]) -> bool:
-        """
-        Invoke the given `fun` for each element in `self.image`, then return
-        `True`.
-        >>> Iter([1, 3]).each(print)
-        1
-        2
-        3
-        """
-        list(map(fun, self.image))
-        return True
-
     def empty(self) -> bool:
         """
         Return `True` if `self.image` is empty, otherwise `False`.
@@ -312,24 +296,6 @@ class Iter:
         ```
         """
         return not bool(len(self.image))
-
-    def fetch(self, index: int) -> Dict[str, Any]:
-        """
-        Find the element at the given index (zero-based). Return `{'ok': element}`
-        if found, otherwise `{'error': None}`.
-
-        ```python
-        >>> Iter([2, 4, 6]).fetch(0)
-        {'ok': 2}
-        >>> Iter([2, 4, 6]).fetch(-3)
-        {'ok': 2}
-        >>> Iter([2, 4, 6]).fetch(2)
-        {'ok': 6}
-        >>> Iter([2, 4, 6]).fetch(4)
-        {'error': None}
-        ```
-        """
-        return {'ok': self.image[index]} if index < len(self.image) else {'error': None}
 
     def filter(self, fun: Callable[[Any], bool]) -> Iter:
         """
@@ -406,16 +372,9 @@ class Iter:
         self.image = list(itertools.chain(*map(fun, self.image)))
         return self
 
-    def flat_map_reduce(self, fun: Callable[[Any, Any], Any], acc: int=1) -> Iter:
-        """
-        Map and reduce an `self.image`, flattening the given results (only one
-        level deep). It expects an accumulator and a function that receives each
-        iterable element, and must return a...
-
-        ```python
-        >>> #example
-        ```
-        """
+    def flat_map_reduce(self, acc: int, fun: Callable[[Any, Any], Any]) -> Iter:
+        # reference implementation:
+        # https://hexdocs.pm/elixir/1.12/Enum.html#flat_map_reduce/3
         raise NotImplementedError()
 
     def frequencies(self) -> Iter:
@@ -696,7 +655,7 @@ class Iter:
 
     @overload
     @staticmethod
-    def range(bounds: List[int, int]) -> List[int]:
+    def range(bounds: List[int]) -> List[int]:
         """
         Return a sequence of integers from start to end.
 
@@ -711,11 +670,11 @@ class Iter:
 
     @overload
     @staticmethod
-    def range(bounds: Tuple[int, int]) -> List[int]: ...
+    def range(bounds: Tuple[int]) -> List[int]: ...
 
     @staticmethod
-    def range(bounds: List[int, int] | Tuple[int, int]) -> List[int]:
-        return list(range(bounds[0], bounds[1]+1) if isinstance(bounds, List) else range(bounds[0]+1, bounds[1]))
+    def range(bounds: List[int] | Tuple[int]) -> List[int]:
+        return list(range(bounds[0], bounds[1]+int(bounds[1]!=0)) if isinstance(bounds, List) and len(bounds) == 2 else range(bounds[0]+1, bounds[1]))
 
     def reduce(self, fun: Callable[[Any, Any], Any], acc: int=0) -> Any:
         """
@@ -924,14 +883,12 @@ class Iter:
     def slide(self, index: int | List[int], insertion_index: int) -> Iter:
         if isinstance(index, List):
             if (max(index) + len(self.image) if max(index) < 0 else max(index)) > insertion_index:
-                # slide backwards
                 p1 = self.image[:insertion_index]
                 p3 = self.image[index[0]:index[1]+1]
                 p2 = self.image[insertion_index:index[0]]
                 p4 = self.image[index[1]+1:]
                 self.image = list(itertools.chain(p1, p3, p2, p4))
             else:
-                # slide forwards
                 p1 = self.image[:index[0]]
                 p2 = self.image[index[0]:index[1]+1]
                 p3 = self.image[index[1]+1:insertion_index+1]
@@ -1230,6 +1187,8 @@ class Iter:
 
     def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable=None, right: Iterable=None) -> Iter:
         if left is not None and right is not None:
+            # reference implementation:
+            # https://hexdocs.pm/elixir/1.12/Enum.html#zip_reduce/3
             raise NotImplementedError()
         else:
             self.image = list(functools.reduce(reducer, zip(*self.image), acc))
