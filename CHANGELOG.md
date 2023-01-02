@@ -1,5 +1,34 @@
 # Changelog
 
+## Version 0.0.5 (31 Jan 2023)
+
+> Note that this update introduces breaking changes.
+
+Implement a `Functions` helper class for common procedures such as
+
+- `invert`
+- `is_even`
+- `is_odd`
+- `sign`
+
+The overload in the `Iter` constructor was removed in favor of a static `Iter.range`
+method to enforce separation of concerns more strictly. Additional minor changes
+were made to pretty much all doc strings to reflect the recent changes that are
+to be consolidated for more information. In brief,
+
+- the `chunk_by` method now also provides `eject` as an optional argument
+- the `concat` method was renamed to `union`
+- `iterable` and `iter` keyword arguments were renamed to `iter_`
+- the method signature of the `range` method has changed and added support for
+  decrements
+
+The following methods are new:
+
+- `duplicates`
+- `flatten`
+- `linspace`
+- `transpose`
+
 ## Version 0.0.4 (17 May 2022)
 
 Refactors code and improves the doc strings here and there. The `Iter.__ctor` method
