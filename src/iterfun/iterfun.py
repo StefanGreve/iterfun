@@ -9,50 +9,56 @@ import random
 import statistics
 import textwrap
 from collections import ChainMap, Counter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union, overload
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Callable, Dict, Final, Generator, Iterable, List, Literal, Optional, Tuple, Union, overload
+
+
+class Functions:
+    def invert(x: Union[int, float]) -> Union[int, float]:
+        return -1 * x
+
+    def is_even(x: Union[int, float]) -> bool:
+        return x % 2 == 0
+
+    def is_odd(x: Union[int, float]) -> bool:
+        return x % 2 != 0
+
+    def sign(x: Union[int, float]) -> Literal[-1, 0, 1]:
+        if x < 0:
+            return -1
+        elif x == 0:
+            return 0
+        else:
+            return 1
 
 
 class Iter:
     """
     ## Iter
 
-    This class implements an eager set of common algorithms for list and dictionary
-    transformations. `self.image` is a public field that we use to temporarily store
-    and pass data between method invocations. In addition to that, `self.domain` registers
-    the original collection that was available during the initial object instantiation
-    and should be regarded as a public constant property.
+    Implements an eager set of common algorithms for list and dictionary transformations.
+    The image is a public field that is used by this class to temporarily store
+    and pass data between method invocations, while the domain registers the input
+    that was available during the initial object instantiation.
 
-    In Python, an `Iterable` is any data type that implements the `__iter__` method
-    (which returns an iterator as the name suggests) or a `__getitem__` method
-    suitable for indexed lookup such as `list`, `tuple`, `dict`, or `set`.
-
-    ## Examples
+    ### Example
     ```python
-    >>> Iter([1, 3]).map(lambda x: 2*x).to_list()
-    [2, 4, 6]
-    >>> Iter([1, 2, 3]).sum()
-    6
-    >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: 2 * v}).to_dict()
-    {'b': 4, 'a': 2}
+    >>> Iter.range(1, 3).map(lambda x: 2*x).sum()
+    12
+    ```
     """
 
-    @overload
-    def __init__(self, iter: Iterable, interval: bool=False) -> Iter: ...
-
-    @overload
-    def __init__(self, iter: List[int, int], interval: bool=True) -> Iter: ...
-
-    @overload
-    def __init__(self, iter: Tuple[int, int], interval: bool=True) -> Iter: ...
-
-    def __init__(self, iter: Iterable | List[int, int] | Tuple[int, int], interval: bool=True) -> Iter:
-        self.image = Iter.range(iter) if interval and len(iter) == 2 and all(map(lambda x: isinstance(x, int), iter)) else iter
-        self.domain = self.image
-
-    def all(self, fun: Optional[Callable[[Any], bool]]=None) -> bool:
+    def __init__(self, iter_: Iterable) -> Iter:
         """
-        Return `True` if all elements in `self.image` are truthy, or `True` if
-        `fun` is not None and its map truthy for all elements in `self.image`.
+        Initialize a new object of this class.
+        """
+        self.domain: Final[Iterable] = iter_
+        self.image: Iterable = iter_
+
+    def all(self, fun: Optional[Callable[[Any], bool]] = None) -> bool:
+        """
+        Return `True` if all elements in the image are truthy, or `True` if
+        `fun` is not None and its map truthy for all elements in the image.
 
         ```python
         >>> Iter([1, 2, 3]).all()
@@ -67,10 +73,10 @@ class Iter:
         """
         return all(self.image) if fun is None else all(map(fun, self.image))
 
-    def any(self, fun: Optional[Callable[[Any], bool]]=None) -> bool:
+    def any(self, fun: Optional[Callable[[Any], bool]] = None) -> bool:
         """
-        Return `True` if any elements in `self.image` are truthy, or `True` if
-        `fun` is not None and its map truthy for at least on element in `self.image`.
+        Return `True` if any elements in the image are truthy, or `True` if
+        `fun` is not None and its map truthy for at least on element in the image.
 
         ```python
         >>> Iter([False, False, False]).any()
@@ -85,9 +91,9 @@ class Iter:
 
     def at(self, index: int) -> Any:
         """
-        Find the element at the given `index` (zero-based). Raise an `IndexError`
+        Find the element at the given zero-based `index`. Raises an `IndexError`
         if `index` is out of bonds. A negative index can be passed, which means
-        `self.image` is enumerated once and the index is counted from the end.
+        the image is enumerated once from right to left.
 
         ```python
         >>> Iter([2, 4, 6]).at(0)
@@ -102,7 +108,7 @@ class Iter:
 
     def avg(self) -> Union[int, float]:
         """
-        Return the sample arithmetic mean of `self.image`.
+        Return the sample arithmetic mean of the image.
 
         ```python
         >>> Iter([0, 10]).avg()
@@ -111,34 +117,39 @@ class Iter:
         """
         return statistics.mean(self.image)
 
-    def chunk_by(self, fun: Callable[[Any], bool]) -> Iter:
+    def chunk_by(self, fun: Callable[[Any], bool], eject: bool = False) -> Iter:
         """
-        Split `self.image` on every element for which `fun` returns a new value.
+        Split the domain on every element for which `fun` returns a new value.
+        Remove any group for which `fun` initially returned `True` if `eject` is
+        enabled.
 
         ```python
         >>> Iter([1, 2, 2, 3, 4, 4, 6, 7, 7, 7]).chunk_by(lambda x: x % 2 == 1)
         [[1], [2, 2], [3], [4, 4, 6], [7, 7, 7]]
+        >>> sequence = ['a', 'b', '1', 'c', 'd', '2', 'e', 'f']
+        >>> Iter(sequence).chunk_by(lambda x: x.isdigit(), eject=True)
+        [['a', 'b'], ['c', 'd'], ['e', 'f']]
         ```
         """
-        self.image = [list(group) for _, group in itertools.groupby(self.image, fun)]
+        tmp = [list(group) for _, group in itertools.groupby(self.image, fun)]
+        self.image = [x for x in tmp if len(x) > 1 and not fun(x[0])] if eject else tmp
         return self
 
-    def chunk_every(self, count: int, step: Optional[int]=None, leftover: Optional[List[Any]]=None) -> Iter:
+    def chunk_every(self, count: int, step: Optional[int] = None, leftover: Optional[List[Any]] = None) -> Iter:
         """
         Return list of lists containing `count` elements each. `step` is optional
         and, if not passed, defaults to `count`, i.e. chunks do not overlap.
 
         ```python
-        >>> Iter([1, 6]).chunk_every(2)
+        >>> Iter.range(1,6).chunk_every(2)
         [[1, 2], [3, 4], [5, 6]]
-        >>> Iter([1, 6]).chunk_every(3, 2, [7])
+        >>> Iter.range(1,6).chunk_every(3, 2, [7])
         [[1, 2, 3], [3, 4, 5], [5, 6, 7]]
-        >>> Iter([1, 4]).chunk_every(3, 3)
+        >>> Iter.range(1, 4).chunk_every(3, 3)
         [[1, 2, 3], [4]]
         ```
         """
-        step = step or count
-        self.image = [list(self.image)[i:i+count] for i in range(0, len(self.image), step)]
+        self.image = [list(self.image)[i:i+count] for i in range(0, len(self.image), step or count)]
         if leftover: self.image[-1].extend(leftover[:len(self.image[-1])])
         return self
 
@@ -147,54 +158,29 @@ class Iter:
         # https://hexdocs.pm/elixir/1.12/Enum.html#chunk_while/4
         raise NotImplementedError()
 
-    def concat(self) -> Iter:
+    def count(self, fun: Optional[Callable[[Any], bool]] = None) -> int:
         """
-        Given a list of lists, concatenates the list into a single list.
+        Return the size of the image if `fun` is `None`, else return the cardinality
+        of the image for which `fun` returns a truthy value.
 
         ```python
-        >>> Iter([[1, 2, 3], [4, 5, 6]]).concat()
-        [1, 2, 4, 5, 6]
-        >>> Iter([[1, [2], 3], [4], [5, 6]]).concat()
-        [1, [2], 3, 4, 5, 6]
-        ```
-
-        Concat range-triggering lists or tuples:
-
-        ```python
-        >>> Iter([[1, 4], [5, 6], [7, 9]]).concat()
-        [1, 2, 3, 4, 5, 6, 7, 8, 9]
-        >>> Iter([(0, 4), (5, 6), (7, 9)]).concat()
-        [1, 2, 3, 8]
-        >>> Iter([(0, 4), (3, 7), (6, 10)]).concat()
-        [1, 2, 3, 4, 5, 6, 7, 8, 9]
-        ```
-        """
-        self.image = list(itertools.chain(*map(Iter.range, self.image)) if all(map(lambda x: len(x) == 2, self.image)) else itertools.chain(*self.image))
-        return self
-
-    def count(self, fun: Optional[Callable[[Any], bool]]=None) -> int:
-        """
-        Return the size of the `self.image` if `fun` is `None`, else return the
-        count of elements in `self.image` for which `fun` returns a truthy value.
-
-        ```python
-        >>> Iter([1, 3]).count()
+        >>> Iter([1, 2, 3]).count()
         3
-        >>> Iter([1, 5]).count(lambda x: x % 2 == 0)
+        >>> Iter.range(1, 5).count(lambda x: x % 2 == 0)
         2
         ```
         """
         return len(list(self.image)) if fun is None else len(list(filter(fun, self.image)))
 
-    def count_until(self, limit: int, fun: Optional[Callable[[Any], bool]]=None) -> int:
+    def count_until(self, limit: int, fun: Optional[Callable[[Any], bool]] = None) -> int:
         """
-        Count the elements in `self.image` for which `fun` returns a truthy value,
+        Determine the cardinality of the image for which `fun` returns a truthy value,
         stopping at `limit`.
 
         ```python
-        >>> Iter([1, 20]).count_until(5)
+        >>> Iter.range(1, 20).count_until(5)
         5
-        >>> Iter([1, 20]).count_until(50)
+        >>> Iter.range(1, 20).count_until(50)
         20
         ```
         """
@@ -202,7 +188,7 @@ class Iter:
 
     def dedup(self) -> Iter:
         """
-        Enumerate `self.image`, returning a list where all consecutive duplicated
+        Enumerate the image, returning a list where all consecutive duplicated
         elements are collapsed to a single element.
 
         ```python
@@ -215,7 +201,7 @@ class Iter:
 
     def dedup_by(self, fun: Callable[[Any], bool]):
         """
-        Enumerates `self.image`, returning a list where all consecutive duplicated
+        Enumerates the image, returning a list where all consecutive duplicated
         elements are collapsed to a single element.
 
         ```python
@@ -232,8 +218,8 @@ class Iter:
 
     def drop(self, amount: int) -> Iter:
         """
-        Drop the `amount` of elements from `self.image`. If a negative `amount` is
-        given, the `amount` of last values will be dropped. `self.image` will be
+        Drop the `amount` of elements from the image. If a negative `amount` is
+        given, the `amount` of last values will be dropped. The image will be
         enumerated once to retrieve the proper index and the remaining calculation
         is performed from the end.
 
@@ -246,23 +232,23 @@ class Iter:
         [1, 2]
         ```
         """
-        self.image = list(self.image)
-        self.image = self.image[amount:] if amount > 0 else self.image[:len(self.image)+amount]
+        tmp = list(self.image)
+        self.image = tmp[amount:] if amount > 0 else tmp[:len(tmp)+amount]
         return self
 
     def drop_every(self, nth: int) -> Iter:
         """
-        Return a list of every `nth` element in the `self.image` dropped, starting
-        with the first element. The first element is always dropped, unless `nth`
-        is `0`. The second argument specifying every nth element must be a non-negative
+        Return a list of every `nth` element in the image dropped, starting with
+        the first element. The first element is always dropped, unless `nth` is `0`.
+        The second argument specifying every nth element must be a non-negative
         integer.
 
         ```python
-        >>> Iter([1, 10]).drop_every(2)
+        >>> Iter.range(1, 10).drop_every(2)
         [2, 4, 6, 8, 10]
-        >>> Iter([1, 10]).drop_every(0)
+        >>> Iter.range(1, 10).drop_every(0)
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        >>> Iter([1, 3]).drop_every(1)
+        >>> Iter.range(1, 3).drop_every(1)
         []
         ```
         """
@@ -271,8 +257,7 @@ class Iter:
 
     def drop_while(self, fun: Callable[[Any], bool]) -> Iter:
         """
-        Drop elements at the beginning of `self.image` while `fun` returns a
-        truthy value.
+        Drop elements at the beginning of the image while `fun` returns a truthy value.
 
         ```python
         >>> Iter([1, 2, 3, 2, 1]).drop_while(lambda x: x < 3)
@@ -282,16 +267,28 @@ class Iter:
         self.image = list(itertools.dropwhile(fun, self.image))
         return self
 
+    def duplicates(self) -> Iter:
+        """
+        Return all duplicated occurrences from the image.
+
+        ```python
+        >>> Iter([1, 1, 1, 2, 2, 3, 4, 4]).duplicates()
+        [1, 2, 4]
+        ```
+        """
+        self.image = [item for item, count in Counter(self.image).items() if count > 1]
+        return self
+
     def empty(self) -> bool:
         """
-        Return `True` if `self.image` is empty, otherwise `False`.
+        Return `True` if the image is empty, otherwise `False`.
 
         ```python
         >>> Iter([]).empty()
         True
-        >>> Iter([0, 0]).empty()
-        True
-        >>> Iter([1, 10]).empty()
+        >>> Iter([0]).empty()
+        False
+        >>> Iter.range(1, 10).empty()
         False
         ```
         """
@@ -299,24 +296,24 @@ class Iter:
 
     def filter(self, fun: Callable[[Any], bool]) -> Iter:
         """
-        Filter `self.image`, i.e. return only those elements for which `fun` returns
+        Filter the image, i.e. return only those elements for which `fun` returns
         a truthy value.
 
         ```python
-        >>> Iter([1, 3]).filter(lambda x: x % 2 == 0)
+        >>> Iter.range(1, 3).filter(lambda x: x % 2 == 0)
         [2]
         ```
         """
         self.image = list(filter(fun, self.image))
         return self
 
-    def find(self, fun: Callable[[Any], bool], default: Optional[Any]=None) -> Optional[Any]:
+    def find(self, fun: Callable[[Any], bool], default: Optional[Any] = None) -> Optional[Any]:
         """
         Return the first element for which `fun` returns a truthy value. If no
         such element is found, return `default`.
 
         ```python
-        >>> Iter([2, 4]).find(lambda x: x % 2 == 1)
+        >>> Iter.range(2, 4).find(lambda x: x % 2 == 1)
         3
         >>> Iter([2, 4, 6]).find(lambda x: x % 2 == 1)
         None
@@ -326,9 +323,9 @@ class Iter:
         """
         return next(filter(fun, self.image), default)
 
-    def find_index(self, fun: Callable[[Any], bool], default: Optional[Any]=None) -> Optional[Any]:
+    def find_index(self, fun: Callable[[Any], bool], default: Optional[Any] = None) -> Optional[Any]:
         """
-        Similar to `self.find`, but return the index (zero-based) of the element
+        Similar to `self.find`, but return the zero-based index of the element
         instead of the element itself.
 
         ```python
@@ -341,7 +338,7 @@ class Iter:
         found = next(filter(fun, self.image), default)
         return self.image.index(found) if found in self.image else default
 
-    def find_value(self, fun: Callable[[Any], bool], default: Optional[Any]=None) -> Optional[Any]:
+    def find_value(self, fun: Callable[[Any], bool], default: Optional[Any] = None) -> Optional[Any]:
         """
         Similar to `self.find`, but return the value of the function invocation instead
         of the element itself.
@@ -351,7 +348,7 @@ class Iter:
         None
         >>> Iter([2, 3, 4]).find_value(lambda x: x % 2 == 1)
         True
-        >>> Iter([1, 3]).find_value(lambda x: isinstance(x, bool), "no bools!")
+        >>> Iter.range(1, 3).find_value(lambda x: isinstance(x, bool), "no bools!")
         'no bools!'
         ```
         """
@@ -360,10 +357,10 @@ class Iter:
 
     def flat_map(self, fun: Callable[[Any], Any]) -> Iter:
         """
-        Map the given `fun` over `self.image` and flattens the result.
+        Map the given `fun` over the image and flattens the result.
 
         ```python
-        >>> Iter([(1, 3), (4, 6)]).flat_map(lambda x: list(range(x[0], x[1] + 1)))
+        >>> Iter([(1, 3), (4, 6)]).flat_map(lambda x: list(range(x[0], x[1]+1))).
         [1, 2, 3, 4, 5, 6]
         >>> Iter([1, 2, 3]).flat_map(lambda x: [[x]])
         [[1], [2], [3]]
@@ -377,9 +374,21 @@ class Iter:
         # https://hexdocs.pm/elixir/1.12/Enum.html#flat_map_reduce/3
         raise NotImplementedError()
 
+    def flatten(self) -> Iter:
+        """
+        Flatten the current image.
+
+        ```python
+        >>> Iter([[1, 2], [3, 4], [5], [6, None]]).flatten()
+        [1, 2, 3, 4, 5, 6, None]
+        ```
+        """
+        self.image = list(itertools.chain(*self.image))
+        return self
+
     def frequencies(self) -> Iter:
         """
-        Return a map with keys as unique elements of `self.image` and values as
+        Return a map with keys as unique elements of the image and values as
         the count of every element.
 
         ```python
@@ -405,13 +414,13 @@ class Iter:
         self.image = Counter(map(key_fun, self.image))
         return self
 
-    def group_by(self, key_fun: Callable[[Any], Any], value_fun: Optional[Callable[[Any], Any]]=None) -> Iter:
+    def group_by(self, key_fun: Callable[[Any], Any], value_fun: Optional[Callable[[Any], Any]] = None) -> Iter:
         """
-        Split `self.image` into groups based on `key_fun`.
+        Split the image into groups based on `key_fun`.
 
         The result is a map where each key is given by `key_fun` and each value
         is a list of elements given by `value_fun`. The order of elements within
-        each list is preserved from `self.image`. However, like all maps, the
+        each list is preserved from the image. However, like all maps, the
         resulting map is unordered.
 
         ```python
@@ -421,13 +430,13 @@ class Iter:
         {3: ["a", "c"], 5: ["d"], 7: ["b"]}
         ```
         """
-        value = lambda g: list(g) if value_fun is None else list(map(value_fun, g))
+        def value(g): return list(g) if value_fun is None else list(map(value_fun, g))
         self.image = {k: value(g) for k, g in itertools.groupby(sorted(self.image, key=key_fun), key_fun)}
         return self
 
     def intersperse(self, separator: Any) -> Iter:
         """
-        Intersperses separator between each element of `self.image`.
+        Intersperses separator between each element of the image.
 
         ```python
         >>> Iter([1, 3]).intersperse(0)
@@ -441,9 +450,9 @@ class Iter:
         self.image = list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(separator), self.image)), 1, None))
         return self
 
-    def into(self, iter: Iterable) -> Iter:
+    def into(self, iter_: Iterable) -> Iter:
         """
-        Insert the given `self.image` into `iter`.
+        Insert the given image into `iter_`.
 
         ```python
         >>> Iter([1, 2]).into([])
@@ -454,14 +463,14 @@ class Iter:
         {'a': 1, 'b': 2}
         ```
         """
-        self.image = {**self.image, **iter} if isinstance(iter, Dict) else [*self.image, *iter]
+        self.image = {**self.image, **iter_} if isinstance(iter_, Dict) else [*self.image, *iter_]
         return self
 
-    def join(self, joiner: Optional[str]=None) -> str:
+    def join(self, joiner: Optional[str] = None) -> str:
         """
-        Join `self.image` into a string using `joiner` as a separator. If `joiner`
+        Join the image into a string using `joiner` as a separator. If `joiner`
         is not passed at all, it defaults to an empty string. All elements in
-        `self.image` must be convertible to a string, otherwise an error is raised.
+        the image must be convertible to a string, otherwise an error is raised.
 
         ```python
         >>> Iter([1,5]).join()
@@ -472,24 +481,49 @@ class Iter:
         """
         return f"{joiner or ''}".join(map(str, self.image))
 
+    @staticmethod
+    def __round(dec: Decimal, prec: int, rounding: str = ROUND_HALF_UP) -> Decimal:
+        return dec.quantize(Decimal(10)**-prec, rounding)
+
+    @staticmethod
+    def linspace(a: Union[int, float], b: Union[int, float], step: int = 50, prec: int = 28) -> Iter:
+        """
+        Return evenly spaced numbers over a specified closed interval `[a, b]`.
+        Set delta precision by rounding to `prec` decimal places.
+
+        ```python
+        >>> Iter.linspace(1.1, 3.3, step=10, prec=2)
+        [1.1, 1.32, 1.54, 1.76, 1.98, 2.2, 2.42, 2.64, 2.86, 3.08, 3.3]
+        ```
+        """
+        delta = Iter.__round(Decimal(str(abs(a - b) / step)), prec)
+        return Iter([float(Decimal(str(a)) + i * delta) for i in range(step+1)])
+
     @overload
     def map(self, fun: Callable[[Any], Any]) -> Iter:
         """
         Return a list where each element is the result of invoking `fun` on each
-        corresponding element of `self.image`. For dictionaries, the function expects
-        a key-value pair as arguments.
+        corresponding element of the image.
 
         ```python
-        >>> Iter([1,3]).map(lambda x: 2 * x)
+        >>> Iter.range(1,3).map(lambda x: 2 * x)
         [2, 4, 6]
-        >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: -v})
-        {'a': -1, 'b': -2}
         ```
         """
         ...
 
     @overload
-    def map(self, fun: Callable[[Any, Any], Dict]) -> Iter: ...
+    def map(self, fun: Callable[[Any, Any], Dict]) -> Iter:
+        """
+        Return a dictionary where each element is the result of invoking `fun` on each
+        corresponding key-value pair of the image.
+
+        ```python
+        >>> Iter({'a': 1, 'b': 2}).map(lambda k, v: {k: -v})
+        {'a': -1, 'b': -2}
+        ```
+        """
+        ...
 
     def map(self, fun: Callable[[Any], Any]) -> Iter:
         self.image = dict(ChainMap(*itertools.starmap(fun, self.image.items()))) if isinstance(self.image, Dict) else list(map(fun, self.image))
@@ -497,16 +531,16 @@ class Iter:
 
     def map_every(self, nth: int, fun: Callable[[Any], Any]) -> Iter:
         """
-        Return a list of results of invoking `fun` on every `nth` element of `self.image`,
+        Return a list of results of invoking `fun` on every `nth` element of the image,
         starting with the first element. The first element is always passed to the given
         function, unless `nth` is `0`.
 
         ```python
-        >>> Iter([1, 10]).map_every(2, lambda x: x + 1000)
+        >>> Iter.range(1, 10).map_every(2, lambda x: x + 1000)
         [1001, 2, 1003, 4, 1005, 6, 1007, 8, 1009, 10]
-        >>> Iter([1, 5]).map_every(0, lambda x: x + 1000)
+        >>> Iter.range(1, 5).map_every(0, lambda x: x + 1000)
         [1, 2, 3, 4, 5]
-        >>> Iter([1, 3]).map_every(1, lambda x: x + 1000)
+        >>> Iter.range(1, 3).map_every(1, lambda x: x + 1000)
         [1001, 1002, 1003]
         ```
         """
@@ -517,26 +551,26 @@ class Iter:
 
     def map_intersperse(self, separator: Any, fun: Callable[[Any], Any]) -> Iter:
         """
-        Map and intersperses `self.image` in one pass.
+        Map and intersperses the image in one pass.
 
         ```python
-        >>> Iter([1, 3]).map_intersperse(None, lambda x: 2 * x)
+        >>> Iter.range(1, 3).map_intersperse(None, lambda x: 2 * x)
         [2, None, 4, None, 6]
         ```
         """
-        self.image =  list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(separator), map(fun, self.image))), 1, None))
+        self.image = list(itertools.islice(itertools.chain.from_iterable(zip(itertools.repeat(separator), map(fun, self.image))), 1, None))
         return self
 
-    def map_join(self, fun: Callable[[Any], Any], joiner: Optional[str]=None) -> str:
+    def map_join(self, fun: Callable[[Any], Any], joiner: Optional[str] = None) -> str:
         """
-        Map and join `self.image` in one pass. If joiner is not passed at all, it
+        Map and join the image in one pass. If joiner is not passed at all, it
         defaults to an empty string. All elements returned from invoking `fun` must
         be convertible to a string, otherwise an error is raised.
 
         ```python
-        >>> Iter([1, 3]).map_join(lambda x: 2 * x)
+        >>> Iter.range(1, 3).map_join(lambda x: 2 * x)
         '246'
-        >>> Iter([1, 3]).map_join(lambda x: 2 * x, " = ")
+        >>> Iter.range(1, 3).map_join(lambda x: 2 * x, " = ")
         '2 = 4 = 6'
         ```
         """
@@ -544,27 +578,26 @@ class Iter:
 
     def map_reduce(self, acc: Union[int, float, complex], fun: Callable[[Any], Any], acc_fun: Optional[Callable[[Any, Any], Any]]) -> Iter:
         """
-        Invoke the given function to each element in `self.image` to reduce it to
+        Invoke the given function to each element in the image to reduce it to
         a single element, while keeping an accumulator. Return a tuple where the
-        first element is the mapped `self.image` and the second one is the final
-        accumulator.
+        first element is the mapped image and the second one is the final accumulator.
 
         ```python
-        >>> Iter([1, 3]).map_reduce(0, lambda x: 2 * x, lambda x, acc: x + acc)
+        >>> Iter.range(1, 3).map_reduce(0, lambda x: 2 * x, lambda x, acc: x + acc)
         ([2, 4, 6], 6)
-        >>> Iter([1, 3]).map_reduce(6, lambda x: x * x, operator.sub)
+        >>> Iter.range(1, 3).map_reduce(6, lambda x: x * x, operator.sub)
         ([1, 4, 9], 0)
         ```
         """
         self.image = (list(map(fun, self.image)), functools.reduce(acc_fun, self.image, acc))
         return self
 
-    def max(self, fun: Optional[Callable[[Any], Any]]=None, empty_fallback: Optional[Any]=None) -> Any:
+    def max(self, fun: Optional[Callable[[Any], Any]] = None, empty_fallback: Optional[Any] = None) -> Any:
         """
-        Return the maximal element in `self.image` as calculated by the given `fun`.
+        Return the maximum of the image as determined by the function `fun`.
 
         ```python
-        >>> Iter([1, 3]).max()
+        >>> Iter.range(1, 3).max()
         3
         >>> Iter("you shall not pass".split()).max()
         'you'
@@ -578,12 +611,12 @@ class Iter:
 
     def member(self, element: Any) -> bool:
         """
-        Checks if element exists within `self.image`.
+        Checks if element exists within the image.
 
         ```python
-        >>> Iter([1, 10]).member(5)
+        >>> Iter.range(1, 10).member(5)
         True
-        >>> Iter([1, 10]).member(5.0)
+        >>> Iter.range(1, 10).member(5.0)
         False
         >>> Iter([1.0, 2.0, 3.0]).member(2)
         True
@@ -595,16 +628,16 @@ class Iter:
         """
         return element in self.image
 
-    def min(self, fun: Optional[Callable[[Any], Any]]=None, empty_fallback: Optional[Any]=None) -> Any:
+    def min(self, fun: Optional[Callable[[Any], Any]] = None, empty_fallback: Optional[Any] = None) -> Any:
         """
-        Return the minimum element in `self.image` as calculated by the given `fun`.
+        Return the minimum of the image as determined by the function `fun`.
 
         ```python
-        >>> Iter([1, 3]).max()
+        >>> Iter.range(1, 3).min()
         1
-        >>> Iter("you shall not pass".split()).max()
+        >>> Iter("you shall not pass".split()).min()
         'you'
-        >>> Iter("you shall not pass".split()).max(len)
+        >>> Iter("you shall not pass".split()).min(len)
         'not'
         >>> Iter([]).max(empty_fallback='n/a')
         'n/a'
@@ -612,9 +645,9 @@ class Iter:
         """
         return (min(self.image, key=fun) if fun is not None else min(self.image)) if self.image else empty_fallback
 
-    def min_max(self, fun: Optional[Callable[[Any], Any]]=None, empty_fallback: Optional[Any]=None) -> Tuple:
+    def min_max(self, fun: Optional[Callable[[Any], Any]] = None, empty_fallback: Optional[Any] = None) -> Tuple[Any, Any]:
         """
-        Return a tuple with the minimal and the maximal elements in `self.image`.
+        Return a tuple with the minimal and the maximal elements in the image.
 
         ```python
         >>> Iter([1, 3]).min_max()
@@ -642,12 +675,12 @@ class Iter:
 
     def random(self) -> Any:
         """
-        Return a random element from `self.image`.
+        Return a random element from the image.
 
         ```python
-        >>> Iter([1, 100]).random()
+        >>> Iter.range(1, 100).random()
         42
-        >>> Iter([1, 100]).random()
+        >>> Iter.range(1, 100).random()
         69
         ```
         """
@@ -655,50 +688,73 @@ class Iter:
 
     @overload
     @staticmethod
-    def range(bounds: List[int]) -> List[int]:
+    def range(a: int, b: int, step: Optional[int] = 1) -> Iter:
         """
-        Return a sequence of integers from start to end.
+        Return a sequence of integers from `a` (inclusive) to `b` (inclusive) by
+        `step`. When `step` is given, it specifies the increment (or decrement).
 
         ```python
-        >>> Iter.range([1, 5])
+        >>> Iter.range(1, 5)
         [1, 2, 3, 4, 5]
-        >>> Iter.range((1, 5))
-        [2, 3, 4]
+        >>> Iter.range(1, 5, 2)
+        [1, 3, 5]
         ```
         """
         ...
 
     @overload
     @staticmethod
-    def range(bounds: Tuple[int]) -> List[int]: ...
+    def range(a: float, b: float, step: Optional[float] = 0.1) -> Iter:
+        """
+        Return a sequence of floats from `a` (inclusive) to `b` (inclusive) by
+        `step`. When `step` is given, it specifies the increment (or decrement).
+
+        ```python
+        >>> Iter.range(0.1, 1.0)
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        >>> Iter.range(0.5, 5.0, 0.5)
+        [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+        >>> Iter.range(5.0, 0.5, -0.5)
+        [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5]
+        ```
+        """
+        ...
 
     @staticmethod
-    def range(bounds: List[int] | Tuple[int]) -> List[int]:
-        return list(range(bounds[0], bounds[1]+int(bounds[1]!=0)) if isinstance(bounds, List) and len(bounds) == 2 else range(bounds[0]+1, bounds[1]))
+    def __range(a: float, b: float, step: float) -> Generator[float]:
+        a2, n2 = Decimal(str(a)), Decimal(str(step))
+        for i in range(int((b - a) / step) + 1):
+            yield float(a2 + (i * n2))
 
-    def reduce(self, fun: Callable[[Any, Any], Any], acc: int=0) -> Any:
+    @staticmethod
+    def range(a: Union[int, float], b: Union[int, float], step: Optional[int | float] = None) -> Iter:
+        if step == 0: raise ValueError("step must not be zero")
+        tmp = step or 1
+        return Iter(list(range(a, b + Functions.sign(tmp), tmp) if isinstance(a, int) else Iter.__range(a, b, step or 0.1)))
+
+    def reduce(self, fun: Callable[[Any, Any], Any], acc: int = 0) -> Any:
         """
-        Invoke `fun` for each element in `self.image` with the accumulator. The
+        Invoke `fun` for each element in the image with the accumulator. The
         accumulator defaults to `0` if not otherwise specified. Reduce (sometimes
         also called fold) is a basic building block in functional programming.
 
         ```python
-        >>> Iter([1, 4]).reduce(operator.add)
+        >>> Iter.range(1, 4).reduce(operator.add)
         10
-        >>> Iter([1, 4]).reduce(lambda x, acc: x * acc, acc=1)
+        >>> Iter.range(1, 4).reduce(lambda x, acc: x * acc, acc=1)
         24
         ```
         """
         return functools.reduce(fun, self.image, acc)
 
-    def reduce_while(self, fun: Callable[[Any, Any], Tuple[bool, Any]], acc: int=0) -> Any:
+    def reduce_while(self, fun: Callable[[Any, Any], Tuple[bool, Any]], acc: int = 0) -> Any:
         """
-        Reduce `self.image` until `fun` returns `(False, acc)`.
+        Reduce the image until `fun` returns `(False, acc)`.
 
         ```python
-        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc + x) if x < 5 else (False, acc))
+        >>> Iter.range(1, 100).reduce_while(lambda x, acc: (True, acc + x) if x < 5 else (False, acc))
         10
-        >>> Iter([1, 100]).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550)
+        >>> Iter.range(1, 100).reduce_while(lambda x, acc: (True, acc - x) if x % 2 == 0 else (False, acc), acc=2550)
         0
         ```
         """
@@ -706,11 +762,11 @@ class Iter:
 
     def reject(self, fun: Callable[[Any], bool]) -> Iter:
         """
-        Return a list of elements in `self.image` excluding those for which the
+        Return a list of elements in the image excluding those for which the
         function `fun` returns a truthy value.
 
         ```python
-        >>> Iter([1, 3]).reject(lambda x: x % 2 == 0)
+        >>> Iter.range(1, 3).reject(lambda x: x % 2 == 0)
         [1, 3]
         ```
         """
@@ -720,60 +776,62 @@ class Iter:
     @overload
     def reverse(self) -> Iter:
         """
-        Return a list of elements in `self.image` in reverse order.
+        Return a list of elements in the image in reverse order.
 
         ```python
-        >>> Iter([1, 5]).reverse()
+        >>> Iter.range(1, 5).reverse()
         [5, 4, 3, 2, 1]
-        ```
-
-        Reverse the elements in `self.image`, appends the `tail`, and returns it
-        as a list.
-
-        ```python
-        >>> Iter([1, 3]).reverse([4, 5, 6])
-        [3, 2, 1, 4, 5, 6]
         ```
         """
         ...
 
     @overload
-    def reverse(self, tail: Optional[List]=None) -> Iter: ...
+    def reverse(self, tail: Optional[List] = None) -> Iter:
+        """
+        Reverse the elements in the image, appends the `tail`, and returns it
+        as a list.
 
-    def reverse(self, tail: Optional[List]=None) -> Iter:
+        ```python
+        >>> Iter.range(1, 3).reverse([4, 5, 6])
+        [3, 2, 1, 4, 5, 6]
+        ```
+        """
+        ...
+
+    def reverse(self, tail: Optional[List] = None) -> Iter:
         self.image = list(reversed(self.image))
         if tail: self.image.extend(tail)
         return self
 
     def reverse_slice(self, start_index: int, count: int) -> Iter:
         """
-        Reverse `self.image` in the range from initial `start_index` through `count`
-        elements. If `count` is greater than the size of the rest of `self.image`,
-        then this function will reverse the rest of `self.image`.
+        Reverse the image in the range from initial `start_index` through `count`
+        elements. If `count` is greater than the size of the rest of the image,
+        then this function will reverse the rest of the image.
 
         ```python
-        >>> Iter([1, 6]).reverse_slice(2, 4)
+        >>> Iter.range(1, 6).reverse_slice(2, 4)
         [1, 2, 6, 5, 4, 3]
-        >>> Iter([1, 10]).reverse_slice(2, 4)
+        >>> Iter.range(1, 10).reverse_slice(2, 4)
         [1, 2, 6, 5, 4, 3, 7, 8, 9, 10]
-        >>> Iter([1, 10]).reverse_slice(2, 30)
+        >>> Iter.range(1, 10).reverse_slice(2, 30)
         [1, 2, 10, 9, 8, 7, 6, 5, 4, 3]
         ```
         """
         self.image = [*self.image[:start_index], *reversed(self.image[start_index:count+start_index]), *self.image[count+start_index:]]
         return self
 
-    def scan(self, fun: Callable[[Any, Any], Any], acc: Optional[int]=None) -> Iter:
+    def scan(self, fun: Callable[[Any, Any], Any], acc: Optional[int] = None) -> Iter:
         """
-        Apply the given function to each element in `self.image`, storing the result
+        Apply the given function `fun` to each element in the image, storing the result
         in a list and passing it as the accumulator for the next computation. Uses
-        the first element in `self.image` as the starting value if `acc` is `None`,
+        the first element in the image as the starting value if `acc` is `None`,
         else uses the given `acc` as the starting value.
 
         ```python
-        >>> Iter([1, 5]).scan(operator.add)
+        >>> Iter.range(1, 5).scan(operator.add)
         [1, 3, 6, 10, 15]
-        >>> Iter([1, 5]).scan(lambda x, y: x + y, acc=0)
+        >>> Iter.range(1, 5).scan(lambda x, y: x + y, acc=0)
         [1, 3, 6, 10, 15]
         ```
         """
@@ -781,29 +839,26 @@ class Iter:
         self.image = list(map(lambda x: x + acc, itertools.accumulate(self.image, fun)))
         return self
 
-    @staticmethod
-    def shorten(sequence: List, width: int=20) -> str:
+    def shorten(self, width: int = 20) -> str:
         """
         Shorten an iterable sequence into an short, human-readable string.
 
         ```python
-        >>> Iter.shorten(range(1, 6))
+        >>> Iter.range(1, 6).shorten()
         '[1, 2, 3, 4, 5]'
-        >>> Iter.shorten(range(1, 101), width=50)
+        >>> Iter.range(1, 100).shorten(width=50)
         '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,...]'
         ```
         """
-        return textwrap.shorten(str(list(sequence)), width=width, placeholder=' ...]')
+        return textwrap.shorten(str(self.image), width=width, placeholder=' ...]')
 
     def shuffle(self) -> Iter:
         """
-        Return a list with the elements of `self.image` shuffled.
+        Return a list with the elements of the image shuffled.
 
         ```python
-        >>> Iter([1, 3]).shuffle()
-        [3, 2, 1]
-        >>> Iter([1, 3]).shuffle()
-        >>> [2, 1, 3]
+        >>> Iter.range(1, 3).shuffle()
+        [3, 1, 2]
         ```
         """
         random.shuffle(self.image)
@@ -812,45 +867,47 @@ class Iter:
     @overload
     def slice(self, index: List[int]) -> Iter:
         """
-        Return a subset list of `self.image` by `index`.
+        Return a subset list of the image by `index`.
 
         Given an `Iter`, it drops elements before `index[0]` (zero-base),
         then it takes elements until element `index[1]` (inclusively). Indexes
-        are normalized, meaning that negative indexes will be counted from the end.\
+        are normalized, meaning that negative indexes will be counted from the end.
 
         If `index[1]` is out of bounds, then it is assigned as the index of
         the last element.
 
         ```python
-        >>> Iter([1, 100]).slice([5, 10])
+        >>> Iter.range(1, 100).slice([5, 10])
         [6, 7, 8, 9, 10, 11]
-        >>> Iter([1, 10]).slice([5, 20])
+        >>> Iter.range(1, 10).slice([5, 20])
         [6, 7, 8, 9, 10]
-        >>> Iter([1, 30]).slice([-5, -1])
+        >>> Iter.range(1, 30).slice([-5, -1])
         [26, 27, 28, 29, 30]
-        ```
-
-        Alternatively, return a subset list of `self.image`, from `index` (zero-based)
-        with `amount` number of elements if available. Given `self.image`, it drops
-        elements right before element `index`; then, it takes `amount` of elements,
-        returning as many elements as possible if there are not enough elements.
-
-        A negative `index` can be passed, which means `self.image` is enumerated
-        once and the index is counted from the end (for example, `-1` starts slicing
-        from the last element). It returns `[]` if `amount` is `0` or if `index` is
-        out of bounds.
-
-        ```python
-        >>> Iter([1, 10]).slice(5, 100)
-        [6, 7, 8, 9, 10]
         ```
         """
         ...
 
     @overload
-    def slice(self, index: int, amount: Optional[int]=None) -> Iter: ...
+    def slice(self, index: int, amount: Optional[int] = None) -> Iter:
+        """
+        Return a subset list of the image, from `index` (zero-based) with `amount`
+        number of elements if available. Given the image, it drops elements right
+        before element `index`; then, it takes `amount` of elements, returning as
+        many elements as possible if there are not enough elements.
 
-    def slice(self, index: int | List[int], amount: Optional[int]=None) -> Iter:
+        A negative `index` can be passed, which means the image is enumerated
+        once and the index is counted from the end (for example, `-1` starts slicing
+        from the last element). It returns `[]` if `amount` is `0` or if `index` is
+        out of bounds.
+
+        ```python
+        >>> Iter.range(1, 10).slice(5, 100)
+        [6, 7, 8, 9, 10]
+        ```
+        """
+        ...
+
+    def slice(self, index: int | List[int], amount: Optional[int] = None) -> Iter:
         if isinstance(index, List):
             self.image = self.image[index[0]:] if index[1] == -1 else self.image[index[0]:index[1]+1]
         else:
@@ -860,7 +917,7 @@ class Iter:
     @overload
     def slide(self, index: int, insertion_index: int) -> Iter:
         """
-        Slide a single or multiple elements given by `index` from `self.image` to
+        Slide a single or multiple elements given by `index` from the image to
         `insertion_index`. The semantics of the range to be moved match the semantics
         of `self.slice()`.
 
@@ -896,15 +953,15 @@ class Iter:
                 self.image = list(itertools.chain(p1, p3, p2, p4))
         else:
             element, ii = self.image.pop(index), insertion_index
-            self.image.insert((ii, ii+1)[ii<0], element) if ii!=-1 else self.image.append(element)
+            self.image.insert((ii, ii+1)[ii < 0], element) if ii != -1 else self.image.append(element)
         return self
 
-    def sort(self, fun: Optional[Callable[[Any], bool]]=None, descending: bool=False) -> Iter:
+    def sort(self, fun: Optional[Callable[[Any], bool]] = None, descending: bool = False) -> Iter:
         """
-        Return a new sorted `self.image`. `fun` specifies a function of one argument
-        that is used to extract a comparison key from each element in iterable (for
-        example, `key=str.lower`). The `descending` flag can be set to sort `self.image`
-        in descending order (ascending by default).
+        Return a new sorted image. `fun` specifies a function of one argument that
+        is used to extract a comparison key from each element in iterable (for example,
+        `key=str.lower`). The `descending` flag can be set to sort the image in
+        descending order (ascending by default).
 
         Use `functools.cmp_to_key()` to convert an old-style cmp function to a key
         function.
@@ -919,18 +976,18 @@ class Iter:
 
     def split(self, count: int) -> Iter:
         """
-        Split `self.image` into two lists, leaving `count` elements in the first
+        Split the image into two lists, leaving `count` elements in the first
         one. If `count` is a negative number, it starts counting from the back to
-        the beginning of `self.image`.
+        the beginning of the image.
 
         ```python
-        >>> Iter([1, 3]).split(2)
+        >>> Iter.range(1, 3).split(2)
         [[1,2], [3]]
-        >>> Iter([1, 3]).split(10)
+        >>> Iter.range(1, 3).split(10)
         [[1, 2, 3], []]
-        >>> Iter([1, 3]).split(0)
+        >>> Iter.range(1, 3).split(0)
         [[], [1, 2, 3]]
-        >>> Iter([1, 3]).split(-1)
+        >>> Iter.range(1, 3).split(-1)
         [[1, 2], [3]]
         ```
         """
@@ -939,18 +996,18 @@ class Iter:
 
     def split_while(self, fun: Callable[[Any], bool]) -> Iter:
         """
-        Split `self.image` in two at the position of the element for which `fun`
+        Split the image in two at the position of the element for which `fun`
         returns a falsy value for the first time.
 
         It returns a nested list of length two. The element that triggered the split
         is part of the second list.
 
         ```python
-        >>> Iter([1, 4]).split_while(lambda x: x < 3)
+        >>> Iter.range(1, 4).split_while(lambda x: x < 3)
         [[1, 2], [3, 4]]
-        >>> Iter([1, 4]).split_while(lambda x: x < 0)
+        >>> Iter.range(1, 4).split_while(lambda x: x < 0)
         [[], [1, 2, 3, 4]]
-        >>> Iter([1, 4]).split_while(lambda x: x > 0)
+        >>> Iter.range(1, 4).split_while(lambda x: x > 0)
         [[1, 2, 3, 4], []]
         ```
         """
@@ -963,20 +1020,20 @@ class Iter:
     @overload
     def split_with(self, fun: Callable[[Any], bool]) -> Iter:
         """
-        Split `self.image` in two lists according to the given function `fun`.
+        Split the image in two lists according to the given function `fun`.
 
-        Split `self.image` in two lists by calling `fun` with each element in
-        `self.image` as its only argument. Returns a nested list with the first
-        list containing all the elements in `self.image` for which applying `fun`
+        Split the image in two lists by calling `fun` with each element in
+        the image as its only argument. Returns a nested list with the first
+        list containing all the elements in the image for which applying `fun`
         returned a truthy value, and a second list with all the elements for which
-        applying fun returned a falsy value. The same logic is also applied when
+        applying `fun` returned a falsy value. The same logic is also applied when
         a key-value paired lambda expression is passed as an argument, as a consequence
         of which the dictionary will be also split into two parts following the
         same pattern.
 
         The elements in both the returned lists (or dictionaries) are in the same
-        relative order as they were in the original `self.image` (if such iterable
-        was ordered, like a list). See the examples below.
+        relative order as they were in the original image (if such iterable was
+        ordered, like a list).
 
         ```python
         >>> Iter([1, 5]).reverse().split_with(lambda x: x % 2 == 0)
@@ -1005,7 +1062,7 @@ class Iter:
         Return the sum of all elements.
 
         ```python
-        >>> Iter([1, 100]).sum()
+        >>> Iter.range(1, 100).sum()
         5050
         ```
         """
@@ -1013,17 +1070,17 @@ class Iter:
 
     def take(self, amount: int) -> Iter:
         """
-        Takes an `amount` of elements from the beginning or the end of `self.image`.
+        Takes an `amount` of elements from the beginning or the end of the image.
         If a positive `amount` is given, it takes the amount elements from the
-        beginning of `self.image`. If a negative `amount` is given, the amount of
-        elements will be taken from the end. `self.image` will be enumerated once
+        beginning of the image. If a negative `amount` is given, the amount of
+        elements will be taken from the end. The image will be enumerated once
         to retrieve the proper index and the remaining calculation is performed from
         the end. If `amount` is `0`, it returns `[]`.
 
         ```python
-        >>> Iter([1, 3]).take(2)
+        >>> Iter.range(1, 3).take(2)
         [1, 2]
-        >>> Iter([1, 3]).take(10)
+        >>> Iter.range(1, 3).take(10)
         [1, 2, 3]
         >>> Iter([1, 2, 3]).take(0)
         []
@@ -1031,22 +1088,22 @@ class Iter:
         [3]
         ```
         """
-        self.image = list(itertools.islice(self.image, amount) if amount > 0 else itertools.islice(reversed(self.image), abs(amount)))
+        self.image = list(itertools.islice(self.image if amount > 0 else reversed(self.image), abs(amount)))
         return self
 
     def take_every(self, nth: int) -> Iter:
         """
-        Return a list of every `nth` element in `self.image`, starting with the
+        Return a list of every `nth` element in the image, starting with the
         first element. The first element is always included, unless `nth` is `0`.
         The second argument specifying every `nth` element must be a non-negative
         integer.
 
         ```python
-        >>> Iter([1, 10]).take_every(2)
+        >>> Iter.range(1, 10).take_every(2)
         [1, 3, 5, 7, 9]
-        >>> Iter([1, 10]).take_every(0)
+        >>> Iter.range(1, 10).take_every(0)
         []
-        >>> Iter([1, 3]).take_every(1)
+        >>> Iter.range(1, 3).take_every(1)
         [1, 2, 3]
         ```
         """
@@ -1055,12 +1112,12 @@ class Iter:
 
     def take_random(self, count: int) -> Iter:
         """
-        Take `count` random elements from `self.image`.
+        Take `count` random elements from the image.
 
         ```python
-        >>> Iter([1, 10]).take_random(2)
-        [3, 1]
-        >>> Iter([1, 10]).take_random(2)
+        >>> Iter.range(1, 10).take_random(2)
+        [4, 2]
+        >>> Iter.range(1, 10).take_random(2)
         [6, 9]
         ```
         """
@@ -1069,23 +1126,52 @@ class Iter:
 
     def take_while(self, fun: Callable[[Any], bool]) -> Iter:
         """
-        Take the elements from the beginning of `self.image` while `fun` returns
+        Take the elements from the beginning of the image while `fun` returns
         a truthy value.
 
         ```python
-        >>> Iter([1, 3]).take_while(lambda x: x < 3)
+        >>> Iter.range(1, 3).take_while(lambda x: x < 3)
         [1, 2]
         ```
         """
         self.image = list(itertools.takewhile(fun, self.image))
         return self
 
-    def uniq(self) -> Iter:
+    def transpose(self, fillvalue: Optional[Any] = None) -> Iter:
         """
-        Enumerates `self.image`, removing all duplicated elements.
+        Transpose the image. When the shorter iterables are exhausted, the `fillvalue`
+        is substituted in their place.
 
         ```python
-        >>> Iter([1, 2, 3, 3, 2, 1]).uniq()
+        >>> Iter([['a', 'b', 'c'], ['d', 'e', 'f'], ['g', 'h', 'i']]).transpose()
+        [('a', 'd', 'g'), ('b', 'e', 'h'), ('c', 'f', 'i')]
+        >>> Iter([['a', 'b', 'c'], ['d', 'e'], ['g', 'h']]).transpose(fillvalue=False)
+        [('a', 'd', 'g'), ('b', 'e', 'h'), ('c', False, False)]
+        ```
+        """
+        self.image = list(itertools.zip_longest(*self.image, fillvalue=fillvalue))
+        return self
+
+    def union(self, iter_: Iterable = None) -> Iter:
+        """
+        Given a list of lists or tuples, concatenates all elements into a single list.
+
+        ```python
+        >>> Iter([[1, 2, 3], [4, 5, 6]]).union()
+        [1, 2, 4, 5, 6]
+        >>> Iter([[1, [2], 3], [4], [5, 6]]).union()
+        [1, [2], 3, 4, 5, 6]
+        ```
+        """
+        self.image = list(itertools.chain(*self.image))
+        return self
+
+    def unique(self) -> Iter:
+        """
+        Enumerates the image, removing all duplicated elements.
+
+        ```python
+        >>> Iter([1, 2, 3, 3, 2, 1]).unique()
         [1, 2, 3]
         ```
         """
@@ -1094,7 +1180,7 @@ class Iter:
 
     def unzip(self) -> Iter:
         """
-        Opposite of `self.zip`. Extracts two-element tuples from `self.image` and
+        Opposite of `self.zip`. Extracts two-element tuples from the image and
         groups them together.
 
         ```python
@@ -1113,13 +1199,13 @@ class Iter:
         return self
 
     @overload
-    def with_index(self, fun_or_offset: Optional[int]=None) -> Iter:
+    def with_index(self, fun_or_offset: Optional[int] = None) -> Iter:
         """
-        Return `self.image` with each element wrapped in a tuple alongside its index.
+        Return the image with each element wrapped in a tuple alongside its index.
         May receive a function or an integer offset. If an offset is given, it will
         index from the given offset instead of from zero. If a function is given,
         it will index by invoking the function for each element and index (zero-based)
-        of the `self.image`.
+        of the image.
 
         ```python
         >>> Iter(list("abc")).with_index()
@@ -1135,7 +1221,7 @@ class Iter:
     @overload
     def with_index(self, fun_or_offset: Callable[[Any, Any], Any]) -> Iter: ...
 
-    def with_index(self, fun_or_offset: Optional[int] | Callable[[Any, Any], Any]=None) -> Iter:
+    def with_index(self, fun_or_offset: Optional[int] | Callable[[Any, Any], Any] = None) -> Iter:
         if isinstance(fun_or_offset, int) or fun_or_offset is None:
             offset = 0 if fun_or_offset is None else fun_or_offset
             self.image = list(zip(self.image, range(offset, len(self.image)+offset)))
@@ -1143,7 +1229,7 @@ class Iter:
             self.image = list(itertools.starmap(fun_or_offset, zip(self.image, range(len(self.image)))))
         return self
 
-    def zip(self, *iterables: Iterable) -> Iter:
+    def zip(self, *iter_: Iterable) -> Iter:
         """
         Zip corresponding elements from a finite collection of iterables into a
         list of tuples. The zipping finishes as soon as any iterable in the given
@@ -1158,13 +1244,13 @@ class Iter:
         [(1, 'a', "foo"), (2, 'b', "bar"), (3, 'c', "baz")]
         ```
         """
-        self.image = list(zip(self.image, *iterables))
+        self.image = list(zip(self.image, *iter_))
         return self
 
     @overload
     def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any]) -> Iter:
         """
-        Reduce over all of `self.image`, halting as soon as any iterable is empty.
+        Reduce over all of the image, halting as soon as any iterable is empty.
         The reducer will receive 2 args: a list of elements (one from each enum) and
         the accumulator.
 
@@ -1172,7 +1258,12 @@ class Iter:
         >>> Iter([[1, 1], [2, 2], [3, 3]]).zip_reduce([], lambda x, acc: tuple(x) + (acc,))
         [(1, 2, 3), (1, 2, 3)]
         ```
+        """
+        ...
 
+    @overload
+    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable = None, right: Iterable = None) -> Iter:
+        """
         Reduce over two iterables halting as soon as either iterable is empty.
 
         ```python
@@ -1182,10 +1273,7 @@ class Iter:
         """
         ...
 
-    @overload
-    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable=None, right: Iterable=None) -> Iter: ...
-
-    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable=None, right: Iterable=None) -> Iter:
+    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable = None, right: Iterable = None) -> Iter:
         if left is not None and right is not None:
             # reference implementation:
             # https://hexdocs.pm/elixir/1.12/Enum.html#zip_reduce/3
@@ -1217,7 +1305,7 @@ class Iter:
         return self
 
     def __repr__(self) -> str:
-        return f"Iter(domain={Iter.shorten(self.domain)},image={Iter.shorten(self.image)})"
+        return f"Iter(domain={Iter(self.domain).shorten()},image={self.shorten()})"
 
     def __str__(self) -> str:
-        return Iter.shorten(self.image, width=80)
+        return self.shorten(width=80)
