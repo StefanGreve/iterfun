@@ -228,6 +228,20 @@ class TestIter(unittest.TestCase):
         self.assertEqual(24, Iter([2, 3, 4]).product())
         self.assertEqual(24.0, Iter([2.0, 3.0, 4.0]).product())
 
+    def test_randint(self):
+        a, b, size = 1, 100, 1000
+        random_numbers = Iter.randint(a, b, size).to_list()
+        self.assertEqual(size, len(random_numbers))
+        self.assertTrue(min(random_numbers) >= a)
+        self.assertTrue(max(random_numbers) <= b)
+
+    def test_randint_secure(self):
+        a, b, size = 1, 100, 1000
+        random_numbers = Iter.randint(a, b, size, secure=True).to_list()
+        self.assertEqual(size, len(random_numbers))
+        self.assertTrue(min(random_numbers) >= a)
+        self.assertTrue(max(random_numbers) <= b)
+
     def test_random(self):
         numbers = Iter.range(1, 100).image
         self.assertIn(Iter(numbers).random(), numbers)

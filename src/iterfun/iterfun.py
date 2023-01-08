@@ -6,6 +6,7 @@ import functools
 import itertools
 import operator
 import random
+import secrets
 import statistics
 import textwrap
 from collections import ChainMap, Counter
@@ -753,6 +754,28 @@ class Iter:
         ```
         """
         return functools.reduce(operator.mul, self.image, 1)
+
+    @staticmethod
+    def __randint(a: int, b: int, size: int, secure: Optional[bool] = False) -> Generator[int]:
+        for _ in range(size):
+            yield secrets.choice(range(a, b+1)) if secure else random.randint(a, b)
+
+    @staticmethod
+    def randint(a: int, b: int, size: int, secure: Optional[bool] = False) -> Iter:
+        """
+        Generate a collection of random integers. Uses a pseudo-random number
+        generator (PRNG) by default, which can be turned off by setting `secure`
+        to `True` which falls back to the cryptographically secure `secrets` module
+        that runs slower in comparison.
+
+        ```python
+        >>> Iter.randint(1, 10, 10)
+        [4, 2, 7, 3, 5, 10, 9, 8, 7, 2]
+        >>> Iter.randint(1, 10_000, size=10, secure=True)
+        [9642, 7179, 1514, 3683, 5117, 9256, 1318, 9880, 5597, 2605]
+        ```
+        """
+        return Iter(Iter.__randint(a, b, size, secure))
 
     def random(self) -> Any:
         """
