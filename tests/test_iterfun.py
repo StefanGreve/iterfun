@@ -137,6 +137,12 @@ class TestIter(unittest.TestCase):
         self.assertEqual({3: ["ant", "cat"], 5: ["dingo"], 7: ["buffalo"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len).image)
         self.assertEqual({3: ["a", "c"], 5: ["d"], 7: ["b"]},  Iter(["ant", "buffalo", "cat", "dingo"]).group_by(len, operator.itemgetter(0)).image)
 
+    def test_intersects(self):
+        self.assertEqual([1, 2], Iter([1, 2, 3, 4]).intersects([5, 6, 1, 2]).image)
+        self.assertEqual([1, 2], Iter([1, 2, 3, 4]).intersects([5, 6, 2, 1]).image)
+        self.assertTrue(Iter.range(1, 10).intersects(range(1, 11)).count() > 0)
+        self.assertFalse(Iter.range(1, 10).intersects(list("abc")).count() > 0)
+
     def test_intersperse(self):
         self.assertEqual([1, 0, 2, 0, 3], Iter.range(1,3).intersperse(0).image)
         self.assertEqual([1], Iter([1]).intersperse(0).image)

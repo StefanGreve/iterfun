@@ -434,6 +434,20 @@ class Iter:
         self.image = {k: value(g) for k, g in itertools.groupby(sorted(self.image, key=key_fun), key_fun)}
         return self
 
+    def intersects(self, iter_: Iterable) -> Iter:
+        """
+        Return the intersection between the image and `iter_`.
+
+        ```python
+        >>> Iter([1, 2, 3, 4]).intersects([5, 6, 1, 2])
+        [1, 2]
+        >>> Iter.range(1, 10).intersects(list("abc")).count() > 0
+        False
+        ```
+        """
+        self.image = list(set(self.image) & set(iter_))
+        return self
+
     def intersperse(self, separator: Any) -> Iter:
         """
         Intersperses separator between each element of the image.
@@ -1138,6 +1152,9 @@ class Iter:
         return self
 
     def to_list(self) -> List[Any]:
+        """
+        Return the image as a list object.
+        """
         return list(self.image)
 
     def transpose(self, fillvalue: Optional[Any] = None) -> Iter:
@@ -1157,7 +1174,8 @@ class Iter:
 
     def union(self, iter_: Iterable = None) -> Iter:
         """
-        Given a list of lists or tuples, concatenates all elements into a single list.
+        Given a list of lists or tuples, concatenate all elements into a single
+        list by performing a union operating.
 
         ```python
         >>> Iter([[1, 2, 3], [4, 5, 6]]).union()
