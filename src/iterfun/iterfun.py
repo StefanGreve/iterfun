@@ -1149,6 +1149,17 @@ class Iter:
         """
         return sum(self.image)
 
+    def symmetric_difference(self, iter_: Iterable) -> Iter:
+        """
+        todo
+
+        ```python
+        >>> # todo
+        ```
+        """
+        self.image = list(set(self.image).symmetric_difference(iter_))
+        return self
+
     def take(self, amount: int) -> Iter:
         """
         Takes an `amount` of elements from the beginning or the end of the image.
@@ -1349,7 +1360,7 @@ class Iter:
         ...
 
     @overload
-    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable = None, right: Iterable = None) -> Iter:
+    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable, right: Iterable) -> Iter:
         """
         Reduce over two iterables halting as soon as either iterable is empty.
 
@@ -1360,7 +1371,7 @@ class Iter:
         """
         ...
 
-    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Iterable = None, right: Iterable = None) -> Iter:
+    def zip_reduce(self, acc: List, reducer: Callable[[Any, Any], Any], left: Optional[Iterable] = None, right: Optional[Iterable] = None) -> Iter:
         if left is not None and right is not None:
             # reference implementation:
             # https://hexdocs.pm/elixir/1.12/Enum.html#zip_reduce/3
