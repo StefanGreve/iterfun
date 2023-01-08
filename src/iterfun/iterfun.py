@@ -16,21 +16,28 @@ from typing import Any, Callable, Dict, Final, Generator, Iterable, List, Litera
 
 class Functions:
     def invert(x: Union[int, float]) -> Union[int, float]:
+        """
+        Invert the algebraic sign of `x`.
+        """
         return -1 * x
 
     def is_even(x: Union[int, float]) -> bool:
+        """
+        Test if `x` is an even number.
+        """
         return x % 2 == 0
 
     def is_odd(x: Union[int, float]) -> bool:
+        """
+        Test if `x` is an odd number.
+        """
         return x % 2 != 0
 
     def sign(x: Union[int, float]) -> Literal[-1, 0, 1]:
-        if x < 0:
-            return -1
-        elif x == 0:
-            return 0
-        else:
-            return 1
+        """
+        Extract the sign of a real number.
+        """
+        return x and (-1 if x < 0 else 1)
 
 
 class Iter:
