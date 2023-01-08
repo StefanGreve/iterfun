@@ -1137,6 +1137,9 @@ class Iter:
         self.image = list(itertools.takewhile(fun, self.image))
         return self
 
+    def to_list(self) -> List[Any]:
+        return list(self.image)
+
     def transpose(self, fillvalue: Optional[Any] = None) -> Iter:
         """
         Transpose the image. When the shorter iterables are exhausted, the `fillvalue`
@@ -1163,7 +1166,7 @@ class Iter:
         [1, [2], 3, 4, 5, 6]
         ```
         """
-        self.image = list(itertools.chain(*self.image))
+        self.image = list(itertools.chain(*self.image, *iter_) if iter_ else itertools.chain(*self.image))
         return self
 
     def unique(self) -> Iter:
