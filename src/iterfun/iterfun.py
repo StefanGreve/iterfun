@@ -1188,19 +1188,18 @@ class Iter:
         self.image = list(itertools.zip_longest(*self.image, fillvalue=fillvalue))
         return self
 
-    def union(self, iter_: Iterable = None) -> Iter:
+    def union(self, iter_: Iterable) -> Iter:
         """
-        Given a list of lists or tuples, concatenate all elements into a single
-        list by performing a union operating.
+        Return the union between the image and `iter_`, sorted in ascending order.
 
         ```python
-        >>> Iter([[1, 2, 3], [4, 5, 6]]).union()
-        [1, 2, 4, 5, 6]
-        >>> Iter([[1, [2], 3], [4], [5, 6]]).union()
-        [1, [2], 3, 4, 5, 6]
+        >>> Iter([1, 2, 3, 4]).union([5, 6])
+        [1, 2, 3, 4, 5, 6]
+        >>> Iter([[1, 2], [3]]).flatten().union([4, 5, 6])
+        [1, 2, 3, 4, 5, 6]
         ```
         """
-        self.image = list(itertools.chain(*self.image, *iter_) if iter_ else itertools.chain(*self.image))
+        self.image = sorted(set(self.image) | set(iter_))
         return self
 
     def unique(self) -> Iter:

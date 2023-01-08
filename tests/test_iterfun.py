@@ -335,12 +335,8 @@ class TestIter(unittest.TestCase):
         self.assertEqual([('a', 'd', 'g'), ('b', 'e', 'h'), ('c', False, False)], Iter([['a', 'b', 'c'], ['d', 'e'], ['g', 'h']]).transpose(fillvalue=False).image)
 
     def test_union(self):
-        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([[1, 2, 3], [4]]).union([[5], [6]]).image)
-        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([[1, 2, 3], [4, 5, 6]]).union().image)
-        self.assertEqual([1, [2], 3, 4, 5, 6], Iter([[1, [2], 3], [4], [5, 6]]).union().image)
-        self.assertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9], Iter([[1, 2, 3, 4], [5, 6], [7, 8, 9]]).union().image)
-        self.assertEqual([0, 4, 5, 6, 7, 9], Iter([(0, 4), (5, 6), (7, 9)]).union().image)
-        self.assertEqual([0, 4, 3, 7, 6, 10], Iter([[0, 4], (3, 7), [6, 10]]).union().image)
+        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([1, 2, 3, 4]).union([5, 6]).image)
+        self.assertEqual([1, 2, 3, 4, 5, 6], Iter([[1, 2], [3]]).flatten().union([4, 5, 6]).image)
 
     def test_uniq(self):
         self.assertEqual([1, 2, 3], Iter([1, 2, 3, 3, 2, 1]).unique().image)
