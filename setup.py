@@ -14,13 +14,10 @@ with open("src/iterfun/__init__.py", encoding='utf-8') as file_handler:
     python_major = int(re.search(r'python_major = "(.*?)"', lines).group(1))
     python_minor = int(re.search(r'python_minor = "(.*?)"', lines).group(1))
 
-if package_name == 'iterfun':
-    print("\033[93mWARNING: You should rename the default package name.\033[0m")
-
 try:
     assert sys.version_info >= (int(python_major), int(python_minor))
 except AssertionError:
-    raise RuntimeError("\033[91mWeather requires Python %s.%s+ (You have Python %s)\033[0m" % (python_major, python_minor, sys.version))
+    raise RuntimeError("\033[91m%s requires Python %s.%s+ (You have Python %s)\033[0m" % (package_name, python_major, python_minor, sys.version))
 
 print("reading dependency file")
 
@@ -67,11 +64,11 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: Implementation :: CPython',
         'Operating System :: OS Independent',
         'Topic :: Utilities',
