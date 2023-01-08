@@ -207,11 +207,11 @@ class TestIter(unittest.TestCase):
         self.assertEqual('n/a', Iter([]).max(empty_fallback='n/a'))
 
     def test_member(self):
-        self.assertTrue(Iter.range(1, 10).member(5))
-        self.assertTrue(Iter.range(1, 10).member(5.0))
-        self.assertTrue(Iter([1.0, 2.0, 3.0]).member(2))
-        self.assertTrue(Iter([1.0, 2.0, 3.0]).member(2.000))
-        self.assertFalse(Iter(['a', 'b', 'c']).member('d'))
+        self.assertTrue(Iter.range(1, 10).is_member(5))
+        self.assertTrue(Iter.range(1, 10).is_member(5.0))
+        self.assertTrue(Iter([1.0, 2.0, 3.0]).is_member(2))
+        self.assertTrue(Iter([1.0, 2.0, 3.0]).is_member(2.000))
+        self.assertFalse(Iter(['a', 'b', 'c']).is_member('d'))
 
     def test_min(self):
         self.assertEqual(1, Iter([1, 3]).min())

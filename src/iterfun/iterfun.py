@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import functools
 import itertools
 import operator
@@ -518,6 +517,25 @@ class Iter:
         """
         return set(self.image).isdisjoint(iter_)
 
+    def is_member(self, element: Any) -> bool:
+        """
+        Test if an element exists in the image.
+
+        ```python
+        >>> Iter.range(1, 10).member(5)
+        True
+        >>> Iter.range(1, 10).member(5.0)
+        False
+        >>> Iter([1.0, 2.0, 3.0]).member(2)
+        True
+        >>> Iter([1.0, 2.0, 3.0]).member(2.000)
+        True
+        >>> Iter(['a', 'b', 'c']).member('d')
+        False
+        ```
+        """
+        return element in self.image
+
     def is_subset(self, iter_: Iterable, proper: bool = False) -> bool:
         """
         Test whether every element in `iter_` is in the image.
@@ -690,25 +708,6 @@ class Iter:
         ```
         """
         return (max(self.image, key=fun) if fun is not None else max(self.image)) if self.image else empty_fallback
-
-    def member(self, element: Any) -> bool:
-        """
-        Test if an element exists in the image.
-
-        ```python
-        >>> Iter.range(1, 10).member(5)
-        True
-        >>> Iter.range(1, 10).member(5.0)
-        False
-        >>> Iter([1.0, 2.0, 3.0]).member(2)
-        True
-        >>> Iter([1.0, 2.0, 3.0]).member(2.000)
-        True
-        >>> Iter(['a', 'b', 'c']).member('d')
-        False
-        ```
-        """
-        return element in self.image
 
     def min(self, fun: Optional[Callable[[Any], Any]] = None, empty_fallback: Optional[Any] = None) -> Any:
         """
