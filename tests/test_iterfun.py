@@ -75,6 +75,10 @@ class TestIter(unittest.TestCase):
         self.assertEqual([3, 2, 4, 1], Iter([3, 6, 7, 7, 2, 0, 1, 4, 1]).dedup_by(lambda x: x > 2).image)
         self.assertEqual([3, 2, 0], Iter([3, 6, 7, 7, 2, 0, 1, 4, 1]).dedup_by(lambda x: x == 2).image)
 
+    def test_difference(self):
+        self.assertEqual([1, 5, 6, 7, 8, 9], Iter.range(1, 10).difference([4, 3, 2, 10]).image)
+        self.assertEqual(['a', 'b', 'c'], Iter(list("abc")).difference(range(1, 11)).image)
+
     def test_drop(self):
         self.assertEqual([3], Iter.range(1, 3).drop(2).image)
         self.assertEqual([], Iter.range(1, 3).drop(10).image)

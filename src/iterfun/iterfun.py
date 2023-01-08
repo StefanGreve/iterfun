@@ -216,6 +216,21 @@ class Iter:
         self.image = [self.image[0], *[self.image[i] for i in range(1, len(self.image)) if fun(self.image[i-1]) != fun(self.image[i])]]
         return self
 
+    def difference(self, iter_: Iterable) -> Iter:
+        """
+        Return the difference between the image and `iter_`, sorted in ascending
+        order.
+
+        ```python
+        >>> Iter.range(1, 10).difference([4, 3, 2, 10])
+        [1, 5, 6, 7, 8, 9]
+        >>> Iter(list("abc")).difference(range(1, 11))
+        ['a', 'b', 'c']
+        ```
+        """
+        self.image = sorted(set(self.image) - set(iter_))
+        return self
+
     def drop(self, amount: int) -> Iter:
         """
         Drop the `amount` of elements from the image. If a negative `amount` is
@@ -436,7 +451,8 @@ class Iter:
 
     def intersects(self, iter_: Iterable) -> Iter:
         """
-        Return the intersection between the image and `iter_`.
+        Return the intersection between the image and `iter_`, sorted in ascending
+        order.
 
         ```python
         >>> Iter([1, 2, 3, 4]).intersects([5, 6, 1, 2])
@@ -445,7 +461,7 @@ class Iter:
         False
         ```
         """
-        self.image = list(set(self.image) & set(iter_))
+        self.image = sorted(set(self.image) & set(iter_))
         return self
 
     def intersperse(self, separator: Any) -> Iter:
