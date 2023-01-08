@@ -507,12 +507,30 @@ class Iter:
     def is_subset(self, iter_: Iterable, proper: bool = False) -> bool:
         """
         Test whether every element in `iter_` is in the image.
+
+        ```python
+        >>> Iter.range(1, 10).is_subset([1, 2])
+        True
+        >>> Iter([1, 2, 3]).is_subset([1, 2, 3])
+        True
+        >>> Iter([1, 2, 3]).is_subset([1, 2, 3], proper=True)
+        False
+        ```
         """
         return set(iter_) < set(self.image) if proper else set(iter_) <= set(self.image)
 
     def is_superset(self, iter_: Iterable, proper: bool = False) -> bool:
         """
         Test whether every element in the image is in `iter_`.
+
+        ```python
+        >>> Iter.range(1, 10).is_subset([1, 2])
+        True
+        >>> Iter([1, 2, 3]).is_subset([1, 2, 3])
+        True
+        >>> Iter([1, 2, 3]).is_subset([1, 2, 3], proper=True)
+        False
+        ```
         """
         return set(iter_) > set(self.image) if proper else set(iter_) >= set(self.image)
 
