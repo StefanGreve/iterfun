@@ -504,6 +504,20 @@ class Iter:
         self.image = {**self.image, **iter_} if isinstance(iter_, Dict) else [*self.image, *iter_]
         return self
 
+    def is_disjoint(self, iter_: Iterable) -> bool:
+        """
+        Test whether the `iter_` has no elements in common with the image. Sets
+        are disjoints if and only if their intersection is the empty set.
+
+        ```python
+        >>> Iter.range(1, 10).is_disjoint([11, 12, 13])
+        True
+        >>> Iter([1, 2, 3]).is_disjoint([1, 2, 3])
+        False
+        ```
+        """
+        return set(self.image).isdisjoint(iter_)
+
     def is_subset(self, iter_: Iterable, proper: bool = False) -> bool:
         """
         Test whether every element in `iter_` is in the image.
@@ -517,7 +531,7 @@ class Iter:
         False
         ```
         """
-        return set(iter_) < set(self.image) if proper else set(iter_) <= set(self.image)
+        return set(iter_) < set(self.image) if proper else set(iter_).issubset(self.image)
 
     def is_superset(self, iter_: Iterable, proper: bool = False) -> bool:
         """
@@ -532,7 +546,7 @@ class Iter:
         False
         ```
         """
-        return set(iter_) > set(self.image) if proper else set(iter_) >= set(self.image)
+        return set(iter_) > set(self.image) if proper else set(iter_).issuperset(self.image)
 
     def join(self, joiner: Optional[str] = None) -> str:
         """

@@ -157,6 +157,10 @@ class TestIter(unittest.TestCase):
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1, 'b': 2}).into({}).image)
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1}).into({'b': 2}).image)
 
+    def test_is_disjoint(self):
+        self.assertTrue(Iter.range(1, 10).is_disjoint([11, 12, 13]))
+        self.assertFalse(Iter([1, 2, 3]).is_disjoint([1, 2, 3]))
+
     def test_is_subset(self):
         self.assertTrue(Iter.range(1, 10).is_subset([1, 2]))
         self.assertTrue(Iter([1, 2, 3]).is_subset([1, 2, 3]))
