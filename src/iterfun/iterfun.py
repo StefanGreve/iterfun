@@ -1174,10 +1174,11 @@ class Iter:
 
     def symmetric_difference(self, iter_: Iterable) -> Iter:
         """
-        todo
+        Return the symmetric difference between the image and `iter_`.
 
         ```python
-        >>> # todo
+        >>> Iter.range(1, 10).symmetric_difference(range(5, 16))
+        [1, 2, 3, 4, 11, 12, 13, 14, 15]
         ```
         """
         self.image = list(set(self.image).symmetric_difference(iter_))

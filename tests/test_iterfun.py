@@ -340,6 +340,9 @@ class TestIter(unittest.TestCase):
     def test_sum(self):
         self.assertEqual(5050, Iter.range(1, 100).sum())
 
+    def test_symmetric_difference(self):
+        self.assertEqual([1, 2, 3, 4, 11, 12, 13, 14, 15], Iter.range(1, 10).symmetric_difference(range(5, 16)).image)
+
     def test_take(self):
         self.assertEqual([1, 2], Iter.range(1, 3).take(2).image)
         self.assertEqual([1, 2, 3], Iter.range(1, 3).take(10).image)
