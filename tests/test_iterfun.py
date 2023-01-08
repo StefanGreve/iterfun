@@ -157,6 +157,16 @@ class TestIter(unittest.TestCase):
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1, 'b': 2}).into({}).image)
         self.assertEqual({'a': 1, 'b': 2}, Iter({'a': 1}).into({'b': 2}).image)
 
+    def test_is_subset(self):
+        self.assertTrue(Iter.range(1, 10).is_subset([1, 2]))
+        self.assertTrue(Iter([1, 2, 3]).is_subset([1, 2, 3]))
+        self.assertFalse(Iter([1, 2, 3]).is_subset([1, 2, 3], proper=True))
+
+    def test_is_superset(self):
+        self.assertTrue(Iter([1, 2]).is_superset(range(1, 11)))
+        self.assertTrue(Iter([1, 2, 3]).is_superset([1, 2, 3]))
+        self.assertFalse(Iter([1, 2, 3]).is_superset([1, 2, 3], proper=True))
+
     def test_join(self):
         self.assertEqual('12345', Iter.range(1, 5).join())
         self.assertEqual('1,2,3,4,5', Iter.range(1, 5).join(','))

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import functools
 import itertools
 import operator
@@ -57,8 +58,8 @@ class Iter:
 
     def all(self, fun: Optional[Callable[[Any], bool]] = None) -> bool:
         """
-        Return `True` if all elements in the image are truthy, or `True` if
-        `fun` is not None and its map truthy for all elements in the image.
+        Test if all elements in the image are truthy, or if `fun` maps to truthy
+        values in all instances.
 
         ```python
         >>> Iter([1, 2, 3]).all()
@@ -75,8 +76,8 @@ class Iter:
 
     def any(self, fun: Optional[Callable[[Any], bool]] = None) -> bool:
         """
-        Return `True` if any elements in the image are truthy, or `True` if
-        `fun` is not None and its map truthy for at least on element in the image.
+        Test if any elements in the image are truthy, or if `fun` maps to truthy
+        values in at least once instance.
 
         ```python
         >>> Iter([False, False, False]).any()
@@ -296,7 +297,7 @@ class Iter:
 
     def empty(self) -> bool:
         """
-        Return `True` if the image is empty, otherwise `False`.
+        Test if the image is empty.
 
         ```python
         >>> Iter([]).empty()
@@ -496,6 +497,18 @@ class Iter:
         self.image = {**self.image, **iter_} if isinstance(iter_, Dict) else [*self.image, *iter_]
         return self
 
+    def is_subset(self, iter_: Iterable, proper: bool = False) -> bool:
+        """
+        Test whether every element in `iter_` is in the image.
+        """
+        return set(iter_) < set(self.image) if proper else set(iter_) <= set(self.image)
+
+    def is_superset(self, iter_: Iterable, proper: bool = False) -> bool:
+        """
+        Test whether every element in the image is in `iter_`.
+        """
+        return set(iter_) > set(self.image) if proper else set(iter_) >= set(self.image)
+
     def join(self, joiner: Optional[str] = None) -> str:
         """
         Join the image into a string using `joiner` as a separator. If `joiner`
@@ -641,7 +654,7 @@ class Iter:
 
     def member(self, element: Any) -> bool:
         """
-        Checks if element exists within the image.
+        Test if an element exists in the image.
 
         ```python
         >>> Iter.range(1, 10).member(5)
