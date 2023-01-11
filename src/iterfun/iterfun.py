@@ -62,6 +62,8 @@ class Iter:
         """
         self.domain: Final[Iterable] = iter_
         self.image: Iterable = iter_
+        self.__value = None
+        self.__index = 0
 
     def all(self, fun: Optional[Callable[[Any], bool]] = None) -> bool:
         """
@@ -945,7 +947,7 @@ class Iter:
 
     def shorten(self, width: int = 20) -> str:
         """
-        Shorten an iterable sequence into an short, human-readable string.
+        Shorten an iterable sequence into a short, human-readable string.
 
         ```python
         >>> Iter.range(1, 6).shorten()
@@ -1426,8 +1428,21 @@ class Iter:
         self.image = [fun(*args) for args in zip(*iterable)]
         return self
 
+    #region magic methods
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.__index >= len(self.image): raise StopIteration
+        self.__value = self.image[self.__index]
+        self.__index += 1
+        return self.__value
+
     def __repr__(self) -> str:
         return f"Iter(domain={Iter(self.domain).shorten()},image={self.shorten()})"
 
     def __str__(self) -> str:
-        return self.shorten(width=80)
+        return ','.join(map(str, self.image))
+
+    #endregion

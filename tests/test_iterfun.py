@@ -397,9 +397,22 @@ class TestIter(unittest.TestCase):
         self.assertEqual([5, 11], Iter([]).zip_with(lambda x, y, z: x + y + z, [1, 3], [3, 5], [1, 3]).image)
         self.assertEqual([5, 7], Iter([]).zip_with(operator.add, [1, 2], [4, 5, 6, 7]).image)
 
+    def test_next(self):
+        a, b = 3, 6
+        first = next(Iter.range(a, b))
+        self.assertEqual(3, first)
+        self.assertEqual(4, first+1)
+        self.assertEqual(5, first+2)
+        self.assertEqual(6, first+3)
+
+    def test_iter(self):
+        a, b = 1, 10
+        for i in Iter.range(a, b):
+            self.assertTrue(a <= i and i <= b)
+
     def test_str(self):
-        self.assertEqual("[1, 2, 3, 4, 5]", str(Iter.range(1, 5)))
-        self.assertEqual("[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, ...]", str(Iter.range(1, 100)))
+        self.assertEqual("1,2,3,4,5", str(Iter.range(1, 5)))
+        self.assertEqual("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20", str(Iter.range(1, 20)))
 
     def test_repr(self):
         self.assertEqual("Iter(domain=[1, 2, 3, 4, 5],image=[1, 2, 3, 4, 5])", repr(Iter.range(1, 5)))
