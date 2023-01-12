@@ -399,11 +399,11 @@ class TestIter(unittest.TestCase):
 
     def test_next(self):
         a, b = 3, 6
-        first = next(Iter.range(a, b))
-        self.assertEqual(3, first)
-        self.assertEqual(4, first+1)
-        self.assertEqual(5, first+2)
-        self.assertEqual(6, first+3)
+        sequence = Iter.range(a, b)
+        self.assertEqual(3, next(sequence))
+        self.assertEqual(4, next(sequence))
+        self.assertEqual(5, next(sequence))
+        self.assertEqual(6, next(sequence))
 
     def test_iter(self):
         a, b = 1, 10
