@@ -398,8 +398,8 @@ class TestIter(unittest.TestCase):
         self.assertEqual([5, 7], Iter([]).zip_with(operator.add, [1, 2], [4, 5, 6, 7]).image)
 
     def test_eq(self):
-        a = Iter.range(a, b)
-        b = Iter.range(a, b)
+        a = Iter.range(1, 10)
+        b = Iter.range(1, 10)
         self.assertEqual(a, b)
 
     def test_ne(self):
