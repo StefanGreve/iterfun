@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import itertools
+import math
 import operator
 import random
 import secrets
@@ -38,6 +39,21 @@ class Functions:
         """
         return x % 2 != 0
 
+    def is_prime(x: int) -> bool:
+        """
+        Implements the Sieve of Eratosthenes check to test whether the number `x`
+        is prime or not.
+        """
+        if x <= 1: return False
+
+        i = 2
+        while math.pow(i, 2) <= x:
+            if x % i == 0:
+                return False
+            i += 1
+
+        return True
+
     def sign(x: int | float) -> Literal[-1, 0, 1]:
         """
         Extract the sign of a real number.
@@ -56,8 +72,16 @@ class Iter:
 
     ### Example
     ```python
+    >>> from iterfun import Iter
+    >>> from iterfun import Functions as fun
+    >>>
+    >>> # map over a collection
     >>> Iter.range(1, 3).map(lambda x: 2*x).sum()
     12
+    >>>
+    >>> # use helper methods from the Functions class
+    >>> Iter.range(10).filter(fun.is_prime).join('-')
+    '2-3-5-7'
     ```
     """
 
