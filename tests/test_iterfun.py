@@ -397,6 +397,21 @@ class TestIter(unittest.TestCase):
         self.assertEqual([5, 11], Iter([]).zip_with(lambda x, y, z: x + y + z, [1, 3], [3, 5], [1, 3]).image)
         self.assertEqual([5, 7], Iter([]).zip_with(operator.add, [1, 2], [4, 5, 6, 7]).image)
 
+    def test_eq(self):
+        a = Iter.range(a, b)
+        b = Iter.range(a, b)
+        self.assertEqual(a, b)
+
+    def test_ne(self):
+        a = Iter.range(1, 10)
+        b = Iter.range(5, 12)
+        self.assertNotEqual(a, b)
+
+    def test_iter(self):
+        a, b = 1, 10
+        for i in Iter.range(a, b):
+            self.assertTrue(a <= i and i <= b)
+
     def test_next(self):
         a, b = 3, 6
         sequence = Iter.range(a, b)
@@ -404,11 +419,6 @@ class TestIter(unittest.TestCase):
         self.assertEqual(4, next(sequence))
         self.assertEqual(5, next(sequence))
         self.assertEqual(6, next(sequence))
-
-    def test_iter(self):
-        a, b = 1, 10
-        for i in Iter.range(a, b):
-            self.assertTrue(a <= i and i <= b)
 
     def test_str(self):
         self.assertEqual("1,2,3,4,5", str(Iter.range(1, 5)))

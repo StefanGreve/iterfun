@@ -1430,10 +1430,16 @@ class Iter:
 
     #region magic methods
 
-    def __iter__(self):
+    def __eq__(self, other: Iter) -> bool:
+        return self.image == other.image
+
+    def __ne__(self, other: Iter) -> bool:
+        return self.image != other.image
+
+    def __iter__(self) -> Iter:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         if self.__index >= len(self.image): raise StopIteration
         self.__value = self.image[self.__index]
         self.__index += 1
