@@ -132,7 +132,7 @@ class Iter:
         """
         return statistics.mean(self.image)
 
-    def cartesian(self: Self, repeat: int = 1) -> Iter:
+    def cartesian(self: Self, repeat: int = 1) -> Self:
         """
         Return the cartesian product, i.e. `A x B = {(a, b) | a ∈ A ^ b ∈ B}`.
 
@@ -144,7 +144,8 @@ class Iter:
         ```
         """
         nested = any(isinstance(i, Iterable) for i in self.image)
-        return Iter(list(itertools.product(self.image, repeat=repeat) if not nested else itertools.product(*self.image, repeat=repeat)))
+        self.image = list(itertools.product(*self.image, repeat=repeat) if nested else itertools.product(self.image, repeat=repeat))
+        return self
 
     def chunk_by(self: Self, fun: Callable[[Any], bool], eject: bool = False) -> Self:
         """
@@ -186,6 +187,35 @@ class Iter:
         # reference implementation:
         # https://hexdocs.pm/elixir/1.12/Enum.html#chunk_while/4
         raise NotImplementedError()
+
+    def combinations(self: Self, r: int) -> Self:
+        """
+        Return successive r-length combinations of elements in the iterable.
+
+        ```python
+        >>> Iter([1, 2, 3]).combinations(2)
+        [(1, 2), (1, 3), (2, 3)]
+        >>> Iter.range(1, 3).combinations(r=3)
+        [(1, 2, 3)]
+        ```
+        """
+        self.image = list(itertools.combinations(self.image, r=r))
+        return self
+
+    def combinations_width_replacement(self: Self, r: int) -> Self:
+        """
+        Return successive r-length combinations of elements in the iterable
+        allowing individual elements to have successive repeats.
+
+        ```python
+        >>> Iter([1, 2, 3]).combinations_width_replacement(2)
+        [(1, 1), (1, 2), (1, 3), (2, 2), (2, 3), (3, 3)]
+        >>> Iter.range(1, 3).combinations_width_replacement(r=3)
+        [(1, 1, 1), (1, 1, 2), (1, 1, 3), (1, 2, 2), (1, 2, 3), (1, 3, 3), (2, 2, 2), (2, 2, 3), (2, 3, 3), (3, 3, 3)]
+        ```
+        """
+        self.image = list(itertools.combinations_with_replacement(self.image, r=r))
+        return self
 
     def count(self: Self, fun: Optional[Callable[[Any], bool]] = None) -> int:
         """
@@ -762,6 +792,20 @@ class Iter:
         ```
         """
         return (self.min(fun, empty_fallback), self.max(fun, empty_fallback))
+
+    def permutations(self: Self, r: Optional[int] = None) -> Self:
+        """
+        Return successive r-length permutations of elements in the iterable.
+
+        ```python
+        >>> Iter([1, 2, 3]).permutations()
+        [(1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1)]
+        >>> Iter.range(1, 3).permutations(r=2)
+        [(1, 2), (1, 3), (2, 1), (2, 3), (3, 1), (3, 2)]
+        ```
+        """
+        self.image = list(itertools.permutations(self.image, r=r))
+        return self
 
     def product(self: Self) -> (float | int | complex):
         """
