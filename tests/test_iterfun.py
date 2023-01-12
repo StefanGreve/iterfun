@@ -35,6 +35,14 @@ class TestIter(unittest.TestCase):
     def test_avg(self):
         self.assertEqual(5, Iter([0, 10]).avg())
 
+    def test_cartesian(self):
+        expected = [(True, True), (True, False), (False, True), (False, False)]
+        self.assertEqual(expected, Iter([True, False]).cartesian(repeat=2).image)
+
+        domain = [(1, 2), ('a', 'b')]
+        self.assertEqual([(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')], Iter(domain).cartesian().image)
+        self.assertEqual([(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')], Iter(domain).cartesian(repeat=1).image)
+
     def test_chunk_by(self):
         self.assertEqual([[1], [2, 2], [3], [4, 4, 6], [7, 7]], Iter([1, 2, 2, 3, 4, 4, 6, 7, 7]).chunk_by(lambda x: x % 2 == 1).image)
         self.assertEqual([['a', 'b'], ['c', 'd'], ['e', 'f']], Iter(['a', 'b', '1', 'c', 'd', '2', 'e', 'f']).chunk_by(lambda x: x.isdigit(), eject=True).image)
