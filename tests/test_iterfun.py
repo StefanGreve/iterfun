@@ -38,7 +38,6 @@ class TestIter(unittest.TestCase):
     def test_cartesian(self):
         expected = [(True, True), (True, False), (False, True), (False, False)]
         self.assertEqual(expected, Iter([True, False]).cartesian(repeat=2).image)
-
         domain = [(1, 2), ('a', 'b')]
         self.assertEqual([(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')], Iter(domain).cartesian().image)
         self.assertEqual([(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')], Iter(domain).cartesian(repeat=1).image)
@@ -58,6 +57,15 @@ class TestIter(unittest.TestCase):
     @pytest.mark.xfail(raises=NotImplementedError, reason="TODO")
     def test_chunk_while(self):
         self.assertEqual([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]], Iter([1, 10]).chunk_while([], None, None))
+
+    def test_combinations(self):
+        self.assertEqual([(1, 2), (1, 3), (2, 3)], Iter([1, 2, 3]).combinations(2).image)
+        self.assertEqual([(1, 2, 3)], Iter.range(1, 3).combinations(r=3).image)
+
+    def test_combinations_width_replacement(self):
+        self.assertEqual([(1, 1), (1, 2), (1, 3), (2, 2), (2, 3), (3, 3)], Iter([1, 2, 3]).combinations_width_replacement(2).image)
+        expected = [(1, 1, 1), (1, 1, 2), (1, 1, 3), (1, 2, 2), (1, 2, 3), (1, 3, 3), (2, 2, 2), (2, 2, 3), (2, 3, 3), (3, 3, 3)]
+        self.assertEqual(expected, Iter.range(1, 3).combinations_width_replacement(r=3).image)
 
     def test_count(self):
         self.assertEqual(3, Iter([1, 2, 3]).count())
@@ -231,6 +239,10 @@ class TestIter(unittest.TestCase):
         self.assertEqual((1, 3), Iter.range(1, 3).min_max())
         self.assertEqual((None, None), Iter([]).min_max(empty_fallback=None))
         self.assertEqual(('a', 'aaa'), Iter(["aaa", "a", "bb", "c", "ccc"]).min_max(len))
+
+    def test_permutations(self):
+        self.assertEqual([(1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1)], Iter([1, 2, 3]).permutations().image)
+        self.assertEqual([(1, 2), (1, 3), (2, 1), (2, 3), (3, 1), (3, 2)], Iter.range(1, 3).permutations(r=2).image)
 
     def test_product(self):
         self.assertEqual(24, Iter([2, 3, 4]).product())
