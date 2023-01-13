@@ -866,9 +866,12 @@ class Iter:
         """
         return Iter(Iter.__randint(a, b, size, secure))
 
-    def random(self: Self) -> Any:
+    def random(self: Self, secure: Optional[bool] = False) -> Any:
         """
-        Return a random element from the image.
+        Return a random element from the image. Uses a pseudo-random number
+        generator (PRNG) by default, which can be turned off by setting `secure`
+        to `True` which falls back to the cryptographically secure `secrets` module
+        that runs slower in comparison.
 
         ```python
         >>> Iter.range(1, 100).random()
@@ -877,7 +880,7 @@ class Iter:
         69
         ```
         """
-        return random.choice(self.image)
+        return secrets.choice(self.image) if secure else random.choice(self.image)
 
     @overload
     @staticmethod
