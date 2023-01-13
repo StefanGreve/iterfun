@@ -251,7 +251,7 @@ class Iter:
         self.image = list(itertools.combinations(self.image, r=r))
         return self
 
-    def combinations_width_replacement(self: Self, r: int) -> Self:
+    def combinations_with_replacement(self: Self, r: int) -> Self:
         """
         Return successive r-length combinations of elements in the iterable
         allowing individual elements to have successive repeats.
