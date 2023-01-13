@@ -43,7 +43,7 @@ class File(Enum):
     TEXT = 1
     CSV = 2
     JSON = 3
-    IMG = 4
+    IMAGE = 4
 
 class Functions:
     def invert(x: int | float) -> (int | float):
@@ -891,7 +891,7 @@ class Iter:
 
     @overload
     @staticmethod
-    def open(path: str | Path, file: File = File.IMG) -> Iter:
+    def open(path: str | Path, file: File = File.IMAGE) -> Iter:
         ...
 
     @staticmethod
@@ -917,7 +917,7 @@ class Iter:
             with open(path, mode='r', encoding=encoding) as json_handler:
                 data = json.load(json_handler)
                 return Iter(data)
-        elif file == File.IMG:
+        elif file == File.IMAGE:
             raise NotImplementedError("TODO")
         else:
             with open(path, mode='r', encoding=encoding) as text_handler:
