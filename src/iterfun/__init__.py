@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from .iterfun import Functions, Iter
+from .iterfun import Functions, Iter, File
 
 __version__ = "0.0.5"
 package_name = "iterfun"

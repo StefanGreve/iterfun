@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import csv
 import functools
 import itertools
+import json
 import math
 import operator
 import random
@@ -11,14 +13,37 @@ import secrets
 import statistics
 import sys
 import textwrap
+import pprint
 from collections import ChainMap, Counter
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Callable, Dict, Final, Generator, Iterable, Iterator, List, Literal, Optional, Tuple, overload
+from enum import Enum, unique
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Final,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    overload
+)
 
 if sys.version_info >= (3, 11):
     from typing import Annotated, Self
 else:
     from typing_extensions import Annotated, Self
+
+@unique
+class File(Enum):
+    TEXT = 1
+    CSV = 2
+    JSON = 3
+    IMG = 4
 
 class Functions:
     def invert(x: int | float) -> (int | float):
@@ -210,7 +235,7 @@ class Iter:
     def chunk_while(self: Self, acc: List, chunk_fun: Callable, chunk_after: Callable) -> Self:
         # reference implementation:
         # https://hexdocs.pm/elixir/1.12/Enum.html#chunk_while/4
-        raise NotImplementedError()
+        raise NotImplementedError("TODO")
 
     def combinations(self: Self, r: int) -> Self:
         """
@@ -470,7 +495,7 @@ class Iter:
     def flat_map_reduce(self: Self, acc: int, fun: Callable[[Any, Any], Any]) -> Self:
         # reference implementation:
         # https://hexdocs.pm/elixir/1.12/Enum.html#flat_map_reduce/3
-        raise NotImplementedError()
+        raise NotImplementedError("TODO")
 
     def flatten(self: Self) -> Self:
         """
@@ -816,6 +841,88 @@ class Iter:
         ```
         """
         return (self.min(fun, empty_fallback), self.max(fun, empty_fallback))
+
+    @overload
+    @staticmethod
+    def open(path: str | Path, encoding: str = "utf-8", strip: bool = True, file: File = File.TEXT) -> Iter:
+        """
+        Read a plain text file and store its content as a list in the image. This
+        methods `file` keyword argument defaults to `File.TEXT`. Set `strip` to
+        `False` to disable LF and whitespace trimming (on by default).
+
+        ```python
+        >>> Iter.open("people.txt", encoding="cp1252")
+        ["Stefan", "Monika", "Anneliese"]
+        ```
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def open(path: str | Path, encoding: str = "utf-8", delimiter: str = ",", skip_header: bool = False, file: File = File.CSV) -> Iter:
+        """
+        Deserialize a CSV file and store its content as a nested list in the image.
+        Pass `File.JSON` to the `file` keyword argument to read a file with the
+        `csv` module.
+
+        ```python
+        >>> from iterfun import File
+        >>> Iter.open("data.csv", skip_header=True, file=File.CSV)
+        [['Stefan', '27'], ['Monika', '28'], ['Anneliese', '33']]
+        ```
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def open(path: str | Path, encoding: str = "utf-8", file: File = File.JSON) -> Iter:
+        """
+        Deserialize a JSON file and store its content as a dictionary in the image.
+        Pass `File.JSON` to the `file` keyword argument to read a file with the
+        `json` module.
+
+        ```python
+        >>> from iterfun import File
+        >>> Iter.open("people.json", file=File.JSON)
+        {'People': [{'Name': 'Stefan', 'Age': 27}, {'Name': 'Monika', 'Age': 28}, {'Name': 'Anneliese', 'Age': 33}]}
+        ```
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def open(path: str | Path, file: File = File.IMG) -> Iter:
+        ...
+
+    @staticmethod
+    def open(
+        path: str | Path,
+        encoding: str = "utf-8",
+        strip: bool = True,
+        delimiter: str = ",",
+        skip_header: bool = False,
+        file: File = File.TEXT) -> Iter:
+        """
+        ```python
+        >>> Iter.open("test.txt")
+        ['Hello', 'World']
+        ```
+        """
+        if file == File.CSV:
+            with open(path, mode='r', encoding=encoding) as csv_handler:
+                data = csv.reader(csv_handler, delimiter=delimiter, dialect=csv.excel)
+                if skip_header: next(data)
+                return Iter([row for row in data])
+        elif file == File.JSON:
+            with open(path, mode='r', encoding=encoding) as json_handler:
+                data = json.load(json_handler)
+                return Iter(data)
+        elif file == File.IMG:
+            raise NotImplementedError("TODO")
+        else:
+            with open(path, mode='r', encoding=encoding) as text_handler:
+                data = text_handler.readlines()
+                return Iter([line.rstrip('\n').strip() if strip else line for line in data])
 
     def permutations(self: Self, r: Optional[int] = None) -> Self:
         """
@@ -1491,7 +1598,7 @@ class Iter:
         if left is not None and right is not None:
             # reference implementation:
             # https://hexdocs.pm/elixir/1.12/Enum.html#zip_reduce/3
-            raise NotImplementedError()
+            raise NotImplementedError("TODO")
         else:
             self.image = list(functools.reduce(reducer, zip(*self.image), acc))
         return self
@@ -1536,9 +1643,9 @@ class Iter:
         return self.__value
 
     def __repr__(self: Self) -> str:
-        return f"Iter(domain={Iter(self.domain).shorten()},image={self.shorten()})"
+        return f"Iter(image_type={self.image.__class__.__name__},len={len(self.image)})"
 
     def __str__(self: Self) -> str:
-        return ','.join(map(str, self.image))
+        return repr(self.image) if isinstance(self.image, Dict) else str(self.image)
 
     #endregion
