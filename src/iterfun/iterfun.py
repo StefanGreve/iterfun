@@ -8,15 +8,14 @@ import itertools
 import json
 import math
 import operator
+import os
 import random
 import secrets
 import statistics
 import sys
 import textwrap
-import pprint
 from collections import ChainMap, Counter
 from decimal import ROUND_HALF_UP, Decimal
-from enum import Enum, unique
 from pathlib import Path
 from typing import (
     Any,
@@ -37,13 +36,6 @@ if sys.version_info >= (3, 11):
     from typing import Annotated, Self
 else:
     from typing_extensions import Annotated, Self
-
-@unique
-class File(Enum):
-    TEXT = 1
-    CSV = 2
-    JSON = 3
-    IMAGE = 4
 
 class Functions:
     def invert(x: int | float) -> (int | float):
@@ -235,7 +227,7 @@ class Iter:
     def chunk_while(self: Self, acc: List, chunk_fun: Callable, chunk_after: Callable) -> Self:
         # reference implementation:
         # https://hexdocs.pm/elixir/1.12/Enum.html#chunk_while/4
-        raise NotImplementedError("TODO")
+        raise NotImplementedError("To be released in version 0.0.6")
 
     def combinations(self: Self, r: int) -> Self:
         """
@@ -495,7 +487,7 @@ class Iter:
     def flat_map_reduce(self: Self, acc: int, fun: Callable[[Any, Any], Any]) -> Self:
         # reference implementation:
         # https://hexdocs.pm/elixir/1.12/Enum.html#flat_map_reduce/3
-        raise NotImplementedError("TODO")
+        raise NotImplementedError("To be released in version 0.0.6")
 
     def flatten(self: Self) -> Self:
         """
@@ -844,7 +836,7 @@ class Iter:
 
     @overload
     @staticmethod
-    def open(path: str | Path, encoding: str = "utf-8", strip: bool = True, file: File = File.TEXT) -> Iter:
+    def open(path: str | Path, encoding: str = "utf-8", strip: bool = True) -> Iter:
         """
         Read a plain text file and store its content as a list in the image. This
         methods `file` keyword argument defaults to `File.TEXT`. Set `strip` to
@@ -859,15 +851,14 @@ class Iter:
 
     @overload
     @staticmethod
-    def open(path: str | Path, encoding: str = "utf-8", delimiter: str = ",", skip_header: bool = False, file: File = File.CSV) -> Iter:
+    def open(path: str | Path, encoding: str = "utf-8", delimiter: str = ",", skip_header: bool = False) -> Iter:
         """
         Deserialize a CSV file and store its content as a nested list in the image.
         Pass `File.JSON` to the `file` keyword argument to read a file with the
         `csv` module.
 
         ```python
-        >>> from iterfun import File
-        >>> Iter.open("data.csv", skip_header=True, file=File.CSV)
+        >>> Iter.open("data.csv", skip_header=True)
         [['Stefan', '27'], ['Monika', '28'], ['Anneliese', '33']]
         ```
         """
@@ -875,15 +866,14 @@ class Iter:
 
     @overload
     @staticmethod
-    def open(path: str | Path, encoding: str = "utf-8", file: File = File.JSON) -> Iter:
+    def open(path: str | Path, encoding: str = "utf-8") -> Iter:
         """
         Deserialize a JSON file and store its content as a dictionary in the image.
         Pass `File.JSON` to the `file` keyword argument to read a file with the
         `json` module.
 
         ```python
-        >>> from iterfun import File
-        >>> Iter.open("people.json", file=File.JSON)
+        >>> Iter.open("people.json")
         {'People': [{'Name': 'Stefan', 'Age': 27}, {'Name': 'Monika', 'Age': 28}, {'Name': 'Anneliese', 'Age': 33}]}
         ```
         """
@@ -891,34 +881,27 @@ class Iter:
 
     @overload
     @staticmethod
-    def open(path: str | Path, file: File = File.IMAGE) -> Iter:
+    def open(path: str | Path) -> Iter:
+        """
+        To be released in version 0.0.6
+        """
         ...
 
     @staticmethod
-    def open(
-        path: str | Path,
-        encoding: str = "utf-8",
-        strip: bool = True,
-        delimiter: str = ",",
-        skip_header: bool = False,
-        file: File = File.TEXT) -> Iter:
-        """
-        ```python
-        >>> Iter.open("test.txt")
-        ['Hello', 'World']
-        ```
-        """
-        if file == File.CSV:
+    def open(path: str | Path, encoding: str = "utf-8", strip: bool = True, delimiter: str = ",", skip_header: bool = False) -> Iter:
+        extension = Path(path).suffix.lower()
+
+        if extension == ".csv":
             with open(path, mode='r', encoding=encoding) as csv_handler:
                 data = csv.reader(csv_handler, delimiter=delimiter, dialect=csv.excel)
                 if skip_header: next(data)
                 return Iter([row for row in data])
-        elif file == File.JSON:
+        elif extension == ".json":
             with open(path, mode='r', encoding=encoding) as json_handler:
                 data = json.load(json_handler)
                 return Iter(data)
-        elif file == File.IMAGE:
-            raise NotImplementedError("TODO")
+        elif extension in [".png", ".jpg", ".jpeg"]:
+            raise NotImplementedError("To be released in version 0.0.6")
         else:
             with open(path, mode='r', encoding=encoding) as text_handler:
                 data = text_handler.readlines()
@@ -1123,6 +1106,63 @@ class Iter:
         """
         self.image = [*self.image[:start_index], *reversed(self.image[start_index:count+start_index]), *self.image[count+start_index:]]
         return self
+
+    @overload
+    def save(self: Self, path: str | Path, encoding: str = "utf-8", overwrite: bool = False) -> None:
+        """
+        Store all elements in the image with their string representation as a plain text file to disk.
+
+        ```python
+        >>> Iter.range(1, 10).map(lambda x: x**2).save("data.txt")
+        ```
+        """
+        ...
+
+    @overload
+    def save(self: Self, path: str | Path, encoding: str = "utf-8", delimiter: str = ",", overwrite: bool = False) -> None:
+        """
+        Store all elements in the image with their string representation as a CSV file to disk.
+
+        ```python
+        >>> Iter.range(1, 10).chunk_every(2).save("data.csv")
+        ```
+        """
+        ...
+
+    @overload
+    def save(self: Self, path: str | Path, encoding: str = "utf-8", indent: int = 4, sort_keys: bool = False, overwrite: bool = False) -> None:
+        """
+        Store all elements in the image as a JSON file to disk.
+
+        ```python
+        >>> Iter({'a': 1, 'b':2}).map(lambda k, v: {k: -v * 10}).save("data.json", indent=2)
+        ```
+        """
+        ...
+
+    @overload
+    def save(self: Self, path: str | Path, overwrite: bool = False) -> None:
+        """
+        To be released in version 0.0.6
+        """
+        ...
+
+    def save(
+        self: Self, path: str | Path, encoding: str = "utf-8", delimiter: str = ",", indent: int = 4, sort_keys: bool = False, overwrite: bool = False) -> None:
+        extension = Path(path).suffix.lower()
+        if overwrite: os.remove(path)
+
+        with open(path, mode='w', encoding=encoding) as file_handler:
+            if extension == ".csv":
+                writer = csv.writer(file_handler, delimiter=delimiter)
+                writer.writerows(self.image)
+            elif extension == ".json":
+                data = json.dumps(self.image, indent=indent, sort_keys=sort_keys)
+                file_handler.write(data)
+            elif extension in [".png", ".jpg", ".jpeg"]:
+                raise NotImplementedError("To be released in version 0.0.6")
+            else:
+                file_handler.writelines('\n'.join(map(str, self.image)))
 
     def scan(self: Self, fun: Callable[[Any, Any], Any], acc: Optional[int] = None) -> Self:
         """
@@ -1598,7 +1638,7 @@ class Iter:
         if left is not None and right is not None:
             # reference implementation:
             # https://hexdocs.pm/elixir/1.12/Enum.html#zip_reduce/3
-            raise NotImplementedError("TODO")
+            raise NotImplementedError("To be released in version 0.0.6")
         else:
             self.image = list(functools.reduce(reducer, zip(*self.image), acc))
         return self
