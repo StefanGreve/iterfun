@@ -394,21 +394,6 @@ class Iter:
         self.image = [item for item, count in Counter(self.image).items() if count > 1]
         return self
 
-    def empty(self: Self) -> bool:
-        """
-        Test if the image is empty.
-
-        ```python
-        >>> Iter([]).empty()
-        True
-        >>> Iter([0]).empty()
-        False
-        >>> Iter.range(1, 10).empty()
-        False
-        ```
-        """
-        return not bool(len(self.image))
-
     def filter(self: Self, fun: Callable[[Any], bool]) -> Self:
         """
         Filter the image, i.e. return only those elements for which `fun` returns
@@ -609,6 +594,21 @@ class Iter:
         ```
         """
         return set(self.image).isdisjoint(iter_)
+
+    def is_empty(self: Self) -> bool:
+        """
+        Test if the image is empty.
+
+        ```python
+        >>> Iter([]).is_empty()
+        True
+        >>> Iter([0]).is_empty()
+        False
+        >>> Iter.range(1, 10).is_empty()
+        False
+        ```
+        """
+        return not bool(len(self.image))
 
     def is_member(self: Self, element: Any) -> bool:
         """
@@ -1147,8 +1147,7 @@ class Iter:
         """
         ...
 
-    def save(
-        self: Self, path: str | Path, encoding: str = "utf-8", delimiter: str = ",", indent: int = 4, sort_keys: bool = False, overwrite: bool = False) -> None:
+    def save(self: Self, path: str | Path, encoding: str = "utf-8", delimiter: str = ",", indent: int = 4, sort_keys: bool = False, overwrite: bool = False) -> None:
         extension = Path(path).suffix.lower()
         if overwrite: os.remove(path)
 
@@ -1491,6 +1490,12 @@ class Iter:
         """
         self.image = list(itertools.takewhile(fun, self.image))
         return self
+
+    def to_dict(self: Self) -> Dict:
+        """
+        Return the image as a dictionary object.
+        """
+        return dict(self.image)
 
     def to_list(self: Self) -> List[Any]:
         """

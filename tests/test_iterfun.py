@@ -113,9 +113,9 @@ class TestIter(unittest.TestCase):
         self.assertEqual([1, 2, 4], Iter([1, 1, 1, 2, 2, 3, 4, 4]).duplicates().image)
 
     def test_empty(self):
-        self.assertTrue(Iter([]).empty())
-        self.assertFalse(Iter([0]).empty())
-        self.assertFalse(Iter.range(1, 10).empty())
+        self.assertTrue(Iter([]).is_empty())
+        self.assertFalse(Iter([0]).is_empty())
+        self.assertFalse(Iter.range(1, 10).is_empty())
 
     def test_filter(self):
         self.assertEqual([2], Iter.range(1, 3).filter(lambda x: x % 2 == 0).image)
