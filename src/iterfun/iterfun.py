@@ -443,20 +443,21 @@ class Iter:
         """
         return next(filter(fun, self.image), default)
 
-    def find_index(self: Self, fun: Callable[[Any], bool], default: Optional[Any] = None) -> Optional[Any]:
+    def find_index(self: Self, fun: Callable[[Any], bool]) -> Self:
         """
-        Similar to `self.find`, but return the zero-based index of the element
-        instead of the element itself.
+        Return a list of indices for all occurrences in the image whose filter-
+        value produced by `fun` is equal to `True`, else an empty list.
 
         ```python
-        >>> Iter([2, 4, 6]).find_index(lambda x: x % 2 == 1)
-        None
-        >>> Iter([2, 3, 4]).find_index(lambda x: x % 2 == 1)
-        1
+        >>> from iterfun import Functions as fun
+        >>> Iter.range(1, 10).find_index(fun.is_even)
+        [1, 3, 5, 7, 9]
+        >>> Iter([2, 3, 4]).find_index(lambda x: x < 0)
+        []
         ```
         """
-        found = next(filter(fun, self.image), default)
-        return self.image.index(found) if found in self.image else default
+        self.image = list(map(operator.itemgetter(0), filter(lambda x: fun(x[1]), enumerate(self.image))))
+        return self
 
     def find_value(self: Self, fun: Callable[[Any], bool], default: Optional[Any] = None) -> Optional[Any]:
         """

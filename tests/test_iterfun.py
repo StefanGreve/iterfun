@@ -126,8 +126,8 @@ class TestIter(unittest.TestCase):
         self.assertEqual(0, Iter([2, 4, 6]).find(lambda x: x % 2 == 1, default=0))
 
     def test_find_index(self):
-        self.assertEqual(None, Iter([2, 4, 6]).find_index(lambda x: x % 2 == 1))
-        self.assertEqual(1, Iter([2, 3, 4]).find_index(lambda x: x % 2 == 1))
+        self.assertEqual([1, 3, 5, 7, 9], Iter.range(1, 10).find_index(lambda x: x % 2 == 0).image)
+        self.assertEqual([], Iter([2, 3, 4]).find_index(lambda x: x < 0).image)
 
     def test_find_value(self):
         self.assertEqual(None, Iter([2, 4, 6]).find_value(lambda x: x % 2 == 1))
