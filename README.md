@@ -25,18 +25,29 @@ features a series of handy methods for performing common data transformations.
 
 ## Examples
 
-See also `tests/test_scenarios.py` for more elaborate code snippets.
+### Two Sum
+
+Given an array of integers `domain` and an integer `target`, return indices of the
+two numbers such that they add up to target. You may assume that each input would
+have exactly one solution, and you may not use the same element twice. You can
+return the answer in any order.
 
 ```python
 from iterfun import Iter
-from iterfun import Functions as fun
 
-primes = Iter.range(1, 10_000).filter(fun.is_prime)
+target = 12
+domain = [45, 26, 5, 41, 58, 97, 82, 9, 79, 22, 3, 74, 70, 84, 17, 79, 41, 96, 13, 89]
 
-# 1229
-print(primes.count())
+pair = Iter(domain) \
+    .filter(lambda x: x < target) \
+    .combinations(2) \
+    .filter(lambda x: sum(x) == target) \
+    .flatten() \
+    .to_list()
 
-primes.save("primes.dat")
+
+# [7, 10]
+print(Iter(domain).find_index(lambda x: x in pair).image)
 ```
 
 ---
@@ -48,7 +59,7 @@ what this library is capable of. Documentation and small, self-contained example
 are provided in the doc strings of each method that you can read in the privacy of
 your code editor of choice.
 
-## Functions
+### Functions
 
 - `invert`
 - `is_even`
@@ -56,7 +67,7 @@ your code editor of choice.
 - `is_prime`
 - `sign`
 
-## Iter
+### Iter
 
 - `all`
 - `any`
@@ -141,3 +152,19 @@ your code editor of choice.
 - `with_index`
 - `zip_reduce`
 - `zip_with`
+
+---
+
+## Authors
+
+| Name             | Mail Address            | GitHub Profile                                |
+|------------------|-------------------------|-----------------------------------------------|
+| Stefan Greve     | greve.stefan@outlook.jp | [StefanGreve](https://github.com/StefanGreve) |
+
+See also the list of [contributors](https://github.com/stefangreve/iterfun/contributors)
+who participated in this project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
+for more details.
