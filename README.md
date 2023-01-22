@@ -1,3 +1,9 @@
+<p align="center">
+  <a title="Project Logo">
+    <img height="150" style="margin-top:15px" src="https://github.com/StefanGreve/iterfun/blob/master/iterfun.svg">
+  </a>
+</p>
+
 <h1 align="center">IterFun</h1>
 
 <p align="center">
@@ -25,7 +31,7 @@ features a series of handy methods for performing common data transformations.
 
 ## Examples
 
-### Two Sum
+### Two Sum Problem
 
 Given an array of integers `domain` and an integer `target`, return indices of the
 two numbers such that they add up to target. You may assume that each input would
@@ -45,12 +51,23 @@ pair = Iter(domain) \
     .flatten() \
     .to_list()
 
-
 # [7, 10]
 print(Iter(domain).find_index(lambda x: x in pair).image)
 ```
 
 ---
+
+## Technical Limitations
+
+For reasons of simplicity, the mutable state in `image` is exposed as a list or
+dictionary and not as a generator which is capable of dealing with very large
+sequences. It's an implementation detail that is necessary for some index-based methods,
+though this behavior might change in future versions of this library where applicable.
+
+There is probably room to improve the overall performance and accuracy of this library.
+To this end, future updates will also increase the test coverage in order to consider
+more edge cases and method interoperability. Notice that the terms and conditions
+of the MIT License will always apply.
 
 ## Method Reference
 
@@ -65,6 +82,7 @@ your code editor of choice.
 - `is_even`
 - `is_odd`
 - `is_prime`
+- `miller_rabin`
 - `sign`
 
 ### Iter
