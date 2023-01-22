@@ -64,30 +64,60 @@ class Functions:
         """
         return -1 * x
 
-    def is_even(x: int | float) -> bool:
+    def is_even(n: int) -> bool:
         """
-        Test if `x` is an even number.
+        Test if `n` is an even number.
         """
-        return x % 2 == 0
+        return not n & 1
 
-    def is_odd(x: int | float) -> bool:
+    def is_odd(n: int) -> bool:
         """
-        Test if `x` is an odd number.
+        Test if `n` is an odd number.
         """
-        return x % 2 != 0
+        return bool(n & 1)
 
-    def is_prime(x: int) -> bool:
+    def is_prime(n: int) -> bool:
         """
-        Implements the Sieve of Eratosthenes check to test whether the number `x`
-        is prime or not.
+        Test whether the number `n` is prime or not.
         """
-        if x <= 1: return False
+        if n <= 1: return False
 
         i = 2
-        while math.pow(i, 2) <= x:
-            if x % i == 0:
+        while i ** 2 <= n:
+            if n % i == 0:
                 return False
             i += 1
+
+        return True
+
+    def __inner_miller_rabin(n: int, r: int) -> bool:
+        m = n - 1 # = (n - 1) / 2^k
+        while not m & 1:
+            m >>= 1
+
+        if pow(r, m, n) == 1:
+            return True
+
+        while m < n - 1:
+            if pow(r, m, n) == n - 1:
+                return True
+            m <<= 1
+
+        return False
+
+    def miller_rabin(n: int, k: int = 40) -> bool:
+        """
+        Test whether a number `n >= 2` is composite, i.e. not prime. Return `True`
+        if `n` passes `k` rounds of the Miller-Rabin primality test and assert that
+        a number `n` might possibly be prime, else return `False` if `n` is proved
+        to be a composite.
+        """
+        if n < 2: raise ValueError()
+        if n <= 3: return True
+
+        for _ in range(k):
+            if not Functions.__inner_miller_rabin(n, r=secrets.choice(range(2, n - 1))):
+                return False
 
         return True
 
