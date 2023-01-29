@@ -51,7 +51,8 @@ The following methods are new:
 - `self.__next__`
 
 Starting with version `0.0.5`, this library now also pulls in `typing_extensions`
-as an external dependency.
+as an external dependency. Support for Python 3.7 has been dropped which makes
+version 3.8 the new baseline in this project.
 
 ## Version 0.0.4 (17 May 2022)
 
