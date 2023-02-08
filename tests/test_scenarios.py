@@ -1,7 +1,7 @@
 import unittest
 
-from src.iterfun import Iter
-from src.iterfun import Functions as fun
+from src.iterfun.iter import Iter
+from src.iterfun.functions import Functions as fun
 
 class TestScenarios(unittest.TestCase):
     @classmethod

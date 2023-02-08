@@ -2,7 +2,8 @@ import unittest
 
 import pytest
 
-from src.iterfun import Functions as fun
+# from src.iterfun import Functions as fun
+from src.iterfun.functions import Functions as fun
 
 
 class TestFunctions(unittest.TestCase):
@@ -65,4 +66,3 @@ class TestFunctions(unittest.TestCase):
         self.assertTrue(fun.miller_rabin(5224245449))
         self.assertTrue(fun.miller_rabin(798723477701))
         self.assertTrue(fun.miller_rabin(100005743))
-

@@ -29,6 +29,12 @@
 IterFun implements an eager iterator class reminiscent of Elixir's `Enum` structure
 that features a series of handy methods for performing common data transformations.
 
+You can get it from PyPI through
+
+```powershell
+pip install iterfun
+```
+
 It's a continuously evolving project specifically developed to meet my personal
 needs, but I have decided to put it out in the open in case someone else find it
 as useful as me. Contributions in form of pull requests or suggestions are always

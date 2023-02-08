@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from src.iterfun import Iter
+from src.iterfun.iter import Iter
 
 
 class TestIter(unittest.TestCase):

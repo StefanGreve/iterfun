@@ -1,32 +1,11 @@
 #!/usr/bin/env python3
 
-"""
-The MIT License
-Copyright (c) 2023, Stefan Greve
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-"""
-
 from __future__ import annotations
 
 import csv
 import functools
 import itertools
 import json
-import math
 import operator
 import os
 import random
@@ -46,7 +25,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Literal,
     Optional,
     Tuple,
     overload
@@ -56,77 +34,6 @@ if sys.version_info >= (3, 11):
     from typing import Annotated, Self
 else:
     from typing_extensions import Annotated, Self
-
-class Functions:
-    def invert(x: int | float) -> (int | float):
-        """
-        Invert the algebraic sign of `x`.
-        """
-        return -1 * x
-
-    def is_even(n: int) -> bool:
-        """
-        Test if `n` is an even number.
-        """
-        return not n & 1
-
-    def is_odd(n: int) -> bool:
-        """
-        Test if `n` is an odd number.
-        """
-        return bool(n & 1)
-
-    def is_prime(n: int) -> bool:
-        """
-        Test whether the number `n` is prime or not.
-        """
-        if n <= 1: return False
-
-        i = 2
-        while i ** 2 <= n:
-            if n % i == 0:
-                return False
-            i += 1
-
-        return True
-
-    def __inner_miller_rabin(n: int, r: int) -> bool:
-        m = n - 1 # = (n - 1) / 2^k
-        while not m & 1:
-            m >>= 1
-
-        if pow(r, m, n) == 1:
-            return True
-
-        while m < n - 1:
-            if pow(r, m, n) == n - 1:
-                return True
-            m <<= 1
-
-        return False
-
-    def miller_rabin(n: int, k: int = 40) -> bool:
-        """
-        Test whether a number `n >= 2` is composite, i.e. not prime. Return `True`
-        if `n` passes `k` rounds of the Miller-Rabin primality test and assert that
-        a number `n` might possibly be prime, else return `False` if `n` is proved
-        to be a composite.
-        """
-        if n < 2: raise ValueError()
-        if n <= 3: return True
-
-        for _ in range(k):
-            if not Functions.__inner_miller_rabin(n, r=secrets.choice(range(2, n - 1))):
-                return False
-
-        return True
-
-    def sign(x: int | float) -> Literal[-1, 0, 1]:
-        """
-        Extract the sign of a real number.
-        """
-        return x and (-1 if x < 0 else 1)
-
 
 class Iter:
     """
@@ -1067,7 +974,7 @@ class Iter:
     def range(a: int | float, b: int | float, step: Optional[int | float] = None) -> Iter:
         if step == 0: raise ValueError("step must not be zero")
         tmp = step or 1
-        return Iter(list(range(a, b + Functions.sign(tmp), tmp) if isinstance(a, int) else Iter.__range(a, b, step or 0.1)))
+        return Iter(list(range(a, b + (-1 if tmp < 0 else 1), tmp) if isinstance(a, int) else Iter.__range(a, b, step or 0.1)))
 
     def reduce(self: Self, fun: Callable[[Any, Any], Any], acc: int = 0) -> Any:
         """
