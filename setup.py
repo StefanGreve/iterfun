@@ -1,77 +1,58 @@
 #!/usr/bin/env python3
 
-import re
-import sys
+import glob
+import os
+from typing import List, Optional
 
-from setuptools import find_packages, setup
+from setuptools import Extension, find_packages, setup
 
-print("reading meta data")
+#region helper functions
 
-with open("src/iterfun/__init__.py", encoding='utf-8') as file_handler:
-    lines = file_handler.read()
-    version = re.search(r'__version__ = "(.*?)"', lines).group(1)
-    package_name = re.search(r'package_name = "(.*?)"', lines).group(1)
-    python_major = int(re.search(r'python_major = "(.*?)"', lines).group(1))
-    python_minor = int(re.search(r'python_minor = "(.*?)"', lines).group(1))
+def read_file(path: str, split: Optional[bool]=False) -> str | List[str]:
+    with open(path, mode="r", encoding="utf-8") as file_handler:
+        return file_handler.readlines() if split else file_handler.read()
 
-try:
-    assert sys.version_info >= (int(python_major), int(python_minor))
-except AssertionError:
-    raise RuntimeError("\033[91m%s requires Python %s.%s+ (You have Python %s)\033[0m" % (package_name, python_major, python_minor, sys.version))
+sources = glob.glob("src/*.c")
+optimization_flags = "/O2" if os.name == "nt" else "-O3"
 
-print("reading dependency file")
-
-with open("requirements/release.txt", mode='r', encoding='utf-8') as requirements:
-    packages = requirements.read().splitlines()
-
-with open("requirements/dev.txt", mode='r', encoding='utf-8') as requirements:
-    dev_packages = requirements.read().splitlines()
-
-print("reading readme file")
-
-with open("README.md", mode='r', encoding='utf-8') as readme:
-    long_description = readme.read()
-
-print("running %s's setup routine" % package_name)
+#endregion
 
 setup(
-    author='StefanGreve',
+    author="StefanGreve",
     author_email="greve.stefan@outlook.jp",
-    name=package_name,
-    version=version,
+    name="iterfun",
+    version="0.1.0",
     description="Implements an eager iterator class reminiscent of Elixir's Enum structure.",
-    long_description=long_description,
-    long_description_content_type='text/markdown',
-    license='MIT',
+    license="MIT",
     url="https://github.com/StefanGreve/iterfun",
     project_urls={
-        'Documentation': "https://github.com/StefanGreve/iterfun/blob/master/README.md",
-        'Source Code': "https://github.com/StefanGreve/iterfun",
-        'Bug Reports': "https://github.com/StefanGreve/iterfun/issues",
-        'Changelog': "https://github.com/StefanGreve/iterfun/blob/master/CHANGELOG.md"
+        "Documentation": "https://github.com/StefanGreve/iterfun/blob/master/README.md",
+        "Source Code": "https://github.com/StefanGreve/iterfun",
+        "Bug Reports": "https://github.com/StefanGreve/iterfun/issues",
     },
-    python_requires=">=%d.%d" % (python_major, python_minor),
-    install_requires=packages,
-    extra_requires={
-        'dev': dev_packages[1:],
-        'test': ['pytest']
+    python_requires=">=3.12",
+    install_requires=read_file("requirements/release.txt", split=True),
+    extras_require={
+        "dev": read_file("requirements/development.txt", split=True)[1:],
     },
+    ext_modules = [
+        Extension("iterfun", sources=sources, extra_compile_args={optimization_flags})
+    ],
     include_package_data=True,
-    package_dir={'': 'src'},
-    packages=find_packages(where='src'),
+    package_dir={
+        "": "src"
+    },
+    packages=find_packages(where="src"),
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'License :: OSI Approved :: MIT License',
-        'Intended Audience :: Developers',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Operating System :: OS Independent',
-        'Topic :: Utilities',
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: MIT License",
+        "Intended Audience :: Developers",
+        "Natural Language :: English",
+        "Programming Language :: C",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Operating System :: OS Independent",
+        "Topic :: Utilities",
     ],
     keywords="utils, functional programming, functools, itertools, extension",
 )

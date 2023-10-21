@@ -2,18 +2,14 @@ root = true
 
 [*]
 indent_style = 4
-indent_style = tab
+indent_style = space
 tab_width = 4
 end_of_line = lf
 charset = utf-8
 trim_trailing_whitespaces = true
 insert_final_newline = true
-max_line_length = 160
+max_line_length = 80
 
 [*.yml]
 indent_style = space
 indent_size = 2
-
-[*.py]
-indent_style = space
-indent_size = 4
